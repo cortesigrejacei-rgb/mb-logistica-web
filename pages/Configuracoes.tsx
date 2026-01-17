@@ -25,7 +25,7 @@ export const Configuracoes = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col overflow-y-auto bg-background-light dark:bg-background-dark">
+    <div className="flex-1 flex flex-col overflow-y-auto min-h-0 content-start bg-background-light dark:bg-background-dark pb-24">
       <div className="w-full max-w-[1200px] mx-auto p-4 md:p-8 flex flex-col gap-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex flex-col gap-2">
@@ -170,6 +170,7 @@ const AdminAccountSettings = () => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [newEmail, setNewEmail] = useState('');
+  const [newName, setNewName] = useState('');
   const [confirmEmailMode, setConfirmEmailMode] = useState(false); // To prevent accidental email changes
 
   const [loading, setLoading] = useState(false);
@@ -195,6 +196,24 @@ const AdminAccountSettings = () => {
       setMessage({ text: 'Senha atualizada com sucesso!', type: 'success' });
       setNewPassword('');
       setConfirmPassword('');
+    }
+  };
+
+  const handleUpdateName = async () => {
+    if (!newName || newName.trim().length === 0) {
+      setMessage({ text: 'Nome inválido.', type: 'error' });
+      return;
+    }
+
+    setLoading(true);
+    const { error } = await supabase.auth.updateUser({ data: { name: newName } });
+    setLoading(false);
+
+    if (error) {
+      setMessage({ text: `Erro: ${error.message}`, type: 'error' });
+    } else {
+      setMessage({ text: 'Nome de exibição atualizado! Atualize a página para ver.', type: 'success' });
+      setNewName('');
     }
   };
 
@@ -244,6 +263,30 @@ const AdminAccountSettings = () => {
       )}
 
       <div className="flex flex-col gap-6">
+        {/* Change Display Name */}
+        <div className="bg-background-light dark:bg-[#111822] p-4 rounded-lg border border-[#233348]">
+          <label className="text-sm font-bold text-white mb-3 block flex items-center gap-2">
+            <span className="material-symbols-outlined text-[18px] text-text-secondary">badge</span>
+            Nome de Exibição
+          </label>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              placeholder="Novo nome (ex: Admin Master)"
+              className="bg-[#1a2332] border border-[#324867] text-white text-sm rounded-lg focus:ring-primary focus:border-primary block w-full p-2.5 placeholder-gray-500"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+            />
+            <button
+              onClick={handleUpdateName}
+              disabled={loading || !newName}
+              className="px-4 py-2 bg-[#233348] hover:bg-[#324867] text-white text-sm font-bold rounded-lg transition-colors border border-[#324867] whitespace-nowrap"
+            >
+              {loading ? '...' : 'Salvar Nome'}
+            </button>
+          </div>
+        </div>
+
         {/* Change Password Section */}
         <div className="bg-background-light dark:bg-[#111822] p-4 rounded-lg border border-[#233348]">
           <label className="text-sm font-bold text-white mb-3 block flex items-center gap-2">
