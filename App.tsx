@@ -143,7 +143,7 @@ const AdminLayout: React.FC = () => {
             <span className="material-symbols-outlined">menu</span>
           </button>
         </div>
-        <div className="flex-1 overflow-hidden relative">
+        <div className="flex-1 overflow-hidden relative flex flex-col">
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/tecnicos/novo" element={<TechnicianForm />} />
