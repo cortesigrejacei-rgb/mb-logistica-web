@@ -205,15 +205,22 @@ const AdminAccountSettings = () => {
     }
 
     setLoading(true);
-    const { error } = await supabase.auth.updateUser({ email: newEmail });
+    // Use RPC to bypass email confirmation flow
+    const { data, error } = await supabase.rpc('update_own_email', { new_email: newEmail });
     setLoading(false);
 
     if (error) {
-      setMessage({ text: `Erro: ${error.message}`, type: 'error' });
+      console.error('RPC Error:', error);
+      setMessage({ text: `Erro: ${error.message || 'Falha ao atualizar email'}`, type: 'error' });
     } else {
-      setMessage({ text: 'Email atualizado com sucesso! Faça login novamente com o novo email.', type: 'success' });
-      setNewEmail('');
-      setConfirmEmailMode(false);
+      // Check result from RPC
+      if (data && data.success) {
+        setMessage({ text: 'Email atualizado com sucesso! O novo email já está ativo.', type: 'success' });
+        setNewEmail('');
+        setConfirmEmailMode(false);
+      } else {
+        setMessage({ text: `Erro: ${(data && data.message) || 'Falha desconhecida'}`, type: 'error' });
+      }
     }
   };
 
