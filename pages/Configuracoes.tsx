@@ -167,122 +167,159 @@ const Toggle = ({ label, sub, checked, onChange }: any) => (
   </label>
 );
 const AdminAccountSettings = () => {
-    const [newPassword, setNewPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
-    const [newEmail, setNewEmail] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [newEmail, setNewEmail] = useState('');
+  const [confirmEmailMode, setConfirmEmailMode] = useState(false); // To prevent accidental email changes
 
-    const [loading, setLoading] = useState(false);
-    const [message, setMessage] = useState<{ text: string, type: 'success' | 'error' } | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<{ text: string, type: 'success' | 'error' } | null>(null);
 
-    const handleUpdatePassword = async () => {
-        if (!newPassword || newPassword.length < 6) {
-            setMessage({ text: 'A senha deve ter pelo menos 6 caracteres.', type: 'error' });
-            return;
-        }
-        if (newPassword !== confirmPassword) {
-            setMessage({ text: 'As senhas não conferem.', type: 'error' });
-            return;
-        }
+  const handleUpdatePassword = async () => {
+    if (!newPassword || newPassword.length < 6) {
+      setMessage({ text: 'A senha deve ter pelo menos 6 caracteres.', type: 'error' });
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setMessage({ text: 'As senhas não conferem.', type: 'error' });
+      return;
+    }
 
-        setLoading(true);
-        const { error } = await supabase.auth.updateUser({ password: newPassword });
-        setLoading(false);
+    setLoading(true);
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    setLoading(false);
 
-        if (error) {
-            setMessage({ text: `Erro: ${error.message}`, type: 'error' });
-        } else {
-            setMessage({ text: 'Senha atualizada com sucesso!', type: 'success' });
-            setNewPassword('');
-            setConfirmPassword('');
-        }
-    };
+    if (error) {
+      setMessage({ text: `Erro: ${error.message}`, type: 'error' });
+    } else {
+      setMessage({ text: 'Senha atualizada com sucesso!', type: 'success' });
+      setNewPassword('');
+      setConfirmPassword('');
+    }
+  };
 
-    const handleUpdateEmail = async () => {
-        if (!newEmail || !newEmail.includes('@')) {
-            setMessage({ text: 'Email inválido.', type: 'error' });
-            return;
-        }
+  const handleUpdateEmail = async () => {
+    if (!newEmail || !newEmail.includes('@')) {
+      setMessage({ text: 'Email inválido.', type: 'error' });
+      return;
+    }
 
-        setLoading(true);
-        const { data, error } = await supabase.auth.updateUser({ email: newEmail });
-        setLoading(false);
+    setLoading(true);
+    const { error } = await supabase.auth.updateUser({ email: newEmail });
+    setLoading(false);
 
-        if (error) {
-            setMessage({ text: `Erro: ${error.message}`, type: 'error' });
-        } else {
-            // Supabase sends a confirmation email to both old and new addresses usually
-            setMessage({ text: 'Verifique seu email (antigo e novo) para confirmar a alteração.', type: 'success' });
-            setNewEmail('');
-        }
-    };
+    if (error) {
+      setMessage({ text: `Erro: ${error.message}`, type: 'error' });
+    } else {
+      setMessage({ text: 'Email atualizado com sucesso! Faça login novamente com o novo email.', type: 'success' });
+      setNewEmail('');
+      setConfirmEmailMode(false);
+    }
+  };
 
-    return (
-        <div className="bg-white dark:bg-card-dark rounded-xl p-6 shadow-sm border border-[#233348]">
-            <div className="flex items-center gap-3 mb-6">
-                <div className="p-2 bg-blue-500/20 rounded-lg text-blue-500">
-                    <span className="material-symbols-outlined">manage_accounts</span>
-                </div>
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Conta do Administrador</h3>
-            </div>
-
-            {message && (
-                <div className={`p-3 rounded-lg mb-4 text-sm font-medium ${message.type === 'success' ? 'bg-green-500/20 text-green-500' : 'bg-red-500/20 text-red-500'}`}>
-                    {message.text}
-                </div>
-            )}
-
-            <div className="flex flex-col gap-6">
-                {/* Change Password */}
-                <div className="flex flex-col gap-3">
-                    <label className="text-sm font-medium text-text-secondary">Alterar Senha</label>
-                    <div className="flex flex-col gap-2">
-                        <input
-                            type="password"
-                            placeholder="Nova Senha"
-                            className="bg-[#111822] border border-[#324867] text-white text-sm rounded-lg focus:ring-primary focus:border-primary block w-full p-2.5"
-                            value={newPassword}
-                            onChange={(e) => setNewPassword(e.target.value)}
-                        />
-                        <input
-                            type="password"
-                            placeholder="Confirmar Nova Senha"
-                            className="bg-[#111822] border border-[#324867] text-white text-sm rounded-lg focus:ring-primary focus:border-primary block w-full p-2.5"
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                        />
-                        <button
-                            onClick={handleUpdatePassword}
-                            disabled={loading}
-                            className="mt-1 px-4 py-2 bg-primary hover:bg-blue-600 text-white text-sm font-bold rounded-lg transition-colors disabled:opacity-50"
-                        >
-                            {loading ? 'Atualizando...' : 'Atualizar Senha'}
-                        </button>
-                    </div>
-                </div>
-
-                <div className="h-[1px] bg-[#233348]"></div>
-
-                {/* Change Email */}
-                <div className="flex flex-col gap-3">
-                    <label className="text-sm font-medium text-text-secondary">Alterar Email</label>
-                    <div className="flex flex-col gap-2">
-                        <input
-                            type="email"
-                            placeholder="Novo Email"
-                            className="bg-[#111822] border border-[#324867] text-white text-sm rounded-lg focus:ring-primary focus:border-primary block w-full p-2.5"
-                            value={newEmail}
-                            onChange={(e) => setNewEmail(e.target.value)}
-                        />
-                        <button
-                            onClick={handleUpdateEmail}
-                            disabled={loading}
-                            className="mt-1 px-4 py-2 bg-[#233348] hover:bg-[#324867] text-white text-sm font-bold rounded-lg transition-colors disabled:opacity-50"
-                        >
-                            {loading ? 'Atualizando...' : 'Solicitar Troca de Email'}
-                        </button>
-                    </div>
-                </div>
-            </div>
+  return (
+    <div className="bg-white dark:bg-card-dark rounded-xl p-6 shadow-sm border border-[#233348]">
+      <div className="flex items-center gap-3 mb-6">
+        <div className="p-2 bg-blue-500/20 rounded-lg text-blue-500">
+          <span className="material-symbols-outlined">shield_person</span>
         </div>
-    );
+        <div className="flex flex-col">
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white">Conta do Administrador</h3>
+          <p className="text-xs text-text-secondary">Gerencie suas credenciais de acesso</p>
+        </div>
+      </div>
+
+      {message && (
+        <div className={`p-4 rounded-lg mb-6 text-sm font-medium flex items-center gap-2 ${message.type === 'success' ? 'bg-green-500/10 text-green-500 border border-green-500/20' : 'bg-red-500/10 text-red-500 border border-red-500/20'}`}>
+          <span className="material-symbols-outlined text-[20px]">{message.type === 'success' ? 'check_circle' : 'error'}</span>
+          {message.text}
+        </div>
+      )}
+
+      <div className="flex flex-col gap-6">
+        {/* Change Password Section */}
+        <div className="bg-background-light dark:bg-[#111822] p-4 rounded-lg border border-[#233348]">
+          <label className="text-sm font-bold text-white mb-3 block flex items-center gap-2">
+            <span className="material-symbols-outlined text-[18px] text-text-secondary">lock</span>
+            Alterar Senha
+          </label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <input
+              type="password"
+              placeholder="Nova Senha"
+              className="bg-[#1a2332] border border-[#324867] text-white text-sm rounded-lg focus:ring-primary focus:border-primary block w-full p-2.5 placeholder-gray-500"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+            />
+            <input
+              type="password"
+              placeholder="Confirmar Nova Senha"
+              className="bg-[#1a2332] border border-[#324867] text-white text-sm rounded-lg focus:ring-primary focus:border-primary block w-full p-2.5 placeholder-gray-500"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+            />
+          </div>
+          <div className="mt-3 flex justify-end">
+            <button
+              onClick={handleUpdatePassword}
+              disabled={loading || !newPassword}
+              className="px-4 py-2 bg-primary hover:bg-blue-600 text-white text-sm font-bold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              {loading ? 'Processando...' : 'Atualizar Senha'}
+            </button>
+          </div>
+        </div>
+
+        {/* Change Email Section */}
+        <div className="bg-background-light dark:bg-[#111822] p-4 rounded-lg border border-[#233348]">
+          <div className="flex justify-between items-start mb-3">
+            <label className="text-sm font-bold text-white block flex items-center gap-2">
+              <span className="material-symbols-outlined text-[18px] text-text-secondary">mail</span>
+              Alterar Email de Acesso
+            </label>
+            {!confirmEmailMode && (
+              <button
+                onClick={() => setConfirmEmailMode(true)}
+                className="text-xs text-primary hover:underline font-medium"
+              >
+                Editar
+              </button>
+            )}
+          </div>
+
+          {confirmEmailMode ? (
+            <div className="flex flex-col gap-3 animate-fade-in">
+              <p className="text-xs text-yellow-500 bg-yellow-500/10 p-2 rounded border border-yellow-500/20">
+                <span className="font-bold">Atenção:</span> Ao alterar seu email, você precisará usar o novo endereço no próximo login.
+              </p>
+              <div className="flex gap-2">
+                <input
+                  type="email"
+                  placeholder="Novo endereço de email"
+                  className="bg-[#1a2332] border border-[#324867] text-white text-sm rounded-lg focus:ring-primary focus:border-primary block w-full p-2.5 placeholder-gray-500 flex-1"
+                  value={newEmail}
+                  onChange={(e) => setNewEmail(e.target.value)}
+                />
+                <button
+                  onClick={handleUpdateEmail}
+                  disabled={loading || !newEmail}
+                  className="px-4 py-2 bg-[#233348] hover:bg-[#324867] text-white text-sm font-bold rounded-lg transition-colors border border-[#324867] whitespace-nowrap"
+                >
+                  {loading ? 'Salvando...' : 'Salvar Email'}
+                </button>
+                <button
+                  onClick={() => { setConfirmEmailMode(false); setNewEmail(''); }}
+                  className="px-3 py-2 text-text-secondary hover:text-white transition-colors"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-text-secondary italic">O email atual não pode ser exibido por segurança. Clique em editar para alterar.</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 };
