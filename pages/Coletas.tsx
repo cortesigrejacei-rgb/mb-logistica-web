@@ -3,6 +3,7 @@ import React, { useState, useRef } from 'react';
 import { useData, Collection } from '../context/DataContext';
 import { smartDistribute, TechAssignment } from '../utils/distributionLogic';
 import { parseAddress, normalizeCity } from '../utils/addressParser';
+import { sendPushNotification } from '../utils/notificationUtils';
 
 export const Coletas = () => {
   const {
@@ -173,6 +174,9 @@ export const Coletas = () => {
       const affectedTechs = new Set<string>();
 
       let count = 0;
+      // Map to track count per technician
+      const techCounts: Record<string, number> = {};
+
       for (const assignment of distributionPlan) {
         const { collectionId, technicianId } = assignment;
 
@@ -185,13 +189,26 @@ export const Coletas = () => {
         }
 
         affectedTechs.add(technicianId);
+        techCounts[technicianId] = (techCounts[technicianId] || 0) + 1;
         count++;
       }
 
-      // Optimize Routes for all affected technicians
+      // Identify Date
       const today = new Date().toISOString().split('T')[0];
+
+      // Optimize Routes & Notify Techs
       for (const techId of Array.from(affectedTechs)) {
         await optimizeRouteForTechnician(techId, today);
+
+        // Send Notification
+        const taskCount = techCounts[techId] || 0;
+        if (taskCount > 0) {
+          // Dynamically import or we need to add import at top. 
+          // Since we cannot easily add import at top in this step without breaking file if not careful,
+          // we will use the same strategy as DataContext: Add import at top in next step.
+          // But here let's assume the function is available (I will add import).
+          sendPushNotification(techId, 'Nova Rota Definida', `Você recebeu ${taskCount} novas coletas para hoje. Sua rota foi otimizada.`);
+        }
       }
 
       await refreshData();

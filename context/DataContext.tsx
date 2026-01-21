@@ -1,10 +1,12 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import { sendPushNotification } from '../utils/notificationUtils';
 import { createClient } from '@supabase/supabase-js';
 import { useAuth } from './AuthContext';
 import { calculateOptimalRoute } from '../lib/RouteOptimizer';
 import { simulateGeocode, geocodeAddress } from '../utils/geoUtils';
+
 
 const useSimulatedData = false;
 
@@ -403,6 +405,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       status: 'Pendente',
       date: colData.date || new Date().toISOString().split('T')[0]
     };
+    // ... inside addCollection ...
+
+    // ... inside addCollection ...
     console.log(`[AddCollection] Upserting: ID=${newCol.id}, Date=${newCol.date}, Driver=${newCol.driver_id}`);
     const { error } = await supabase.from('collections').upsert([newCol]);
     if (error) {
@@ -411,6 +416,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       showToast(`Erro DB: ${error.message || error.details || 'Falha ao criar'}`, 'error');
     } else {
       showToast('Coleta criada com sucesso!', 'success'); // Explicit success type
+
+      // Notify Technician if assigned immediately
+      if (newCol.driver_id) {
+        sendPushNotification(newCol.driver_id, 'Nova Coleta', `Nova coleta em ${newCol.address}`);
+      }
+
       if (!skipRefresh) fetchData();
     }
   };

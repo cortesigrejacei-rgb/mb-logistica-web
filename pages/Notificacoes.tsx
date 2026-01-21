@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useData } from '../context/DataContext';
 import { supabase } from '../lib/supabaseClient';
+import { sendPushNotification } from '../utils/notificationUtils';
 
 export const Notificacoes = () => {
     const { technicians, showToast } = useData();
@@ -33,82 +34,34 @@ export const Notificacoes = () => {
         }
 
         let successCount = 0;
-        let dbCount = 0;
         let failCount = 0;
 
-        // 1. Prepare DB Inserts
-        const notificationsToInsert = recipients.map(tech => ({
-            technician_id: tech.id,
-            title,
-            body,
-            description: body, // Legacy DB field required
-            read: false,
-            type: 'info', // Required by DB schema
-            created_at: new Date().toISOString()
-        }));
+        // Use sendPushNotification (RPC) for each recipient
+        // The RPC function handles both the Sending AND the Logging to 'notifications' table.
+        const promises = recipients.map(async (tech) => {
+            const result = await sendPushNotification(tech.id, title, body);
 
-        try {
-            // Bulk insert into Supabase
-            const { error: dbError } = await supabase
-                .from('notifications')
-                .insert(notificationsToInsert);
-
-            if (dbError) {
-                console.error("DB Insert Error:", dbError);
-                // Show detailed error to user for debugging
-                alert(`Erro Banco de Dados: ${dbError.message}\nDetalhes: ${dbError.details || ''}\nDica: Verifique se rodou o script SQL de permissões.`);
-                showToast('Erro ao salvar no banco de dados. Notificação não enviada.', 'error');
-                setIsSending(false);
-                return;
+            if (result && result.success) {
+                successCount++;
             } else {
-                dbCount = notificationsToInsert.length;
+                console.error(`Failed to send to ${tech.name}:`, result?.error);
+                failCount++;
             }
+        });
 
-            // 2. Send Push Notifications (Best Effort)
-            const pushPromises = recipients.map(async (tech) => {
-                if (!tech.expo_push_token) return; // Skip if no token, but it's already saved in DB
-
-                const message = {
-                    to: tech.expo_push_token,
-                    sound: 'default',
-                    title: title,
-                    body: body,
-                    data: { someData: 'goes here' },
-                };
-
-                try {
-                    const response = await fetch('https://exp.host/--/api/v2/push/send', {
-                        method: 'POST',
-                        headers: {
-                            Accept: 'application/json',
-                            'Accept-encoding': 'gzip, deflate',
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(message),
-                    });
-
-                    const data = await response.json();
-                    if (data.data?.status === 'ok') {
-                        successCount++;
-                    } else {
-                        console.error(`Expo Push Error for ${tech.name}:`, data);
-                    }
-                } catch (error) {
-                    console.error(`Network Error for ${tech.name}:`, error);
-                }
-            });
-
-            await Promise.all(pushPromises);
-
-        } catch (err) {
-            console.error("Global Send Error:", err);
-            failCount++;
-        }
+        await Promise.all(promises);
 
         setIsSending(false);
-        showToast(`Salvo para ${dbCount} técnicos. Enviado via Push para ${successCount}.`);
+
+        if (failCount > 0) {
+            showToast(`Enviado: ${successCount}. Falhas: ${failCount}. Verifique o console.`, 'warning');
+        } else {
+            showToast(`Sucesso! Notificação enviada para ${successCount} técnico(s).`, 'success');
+        }
+
         setTitle('');
         setBody('');
+        fetchHistory(); // Refresh list to show new entries
     };
 
     // Fetch history

@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useData } from '../context/DataContext';
 import { supabase } from '../lib/supabaseClient';
+import { sendPushNotification } from '../utils/notificationUtils';
 
 export const Configuracoes = () => {
-  const { settings, updateSettings, resetData } = useData();
+  const { settings, updateSettings, resetData, technicians, showToast } = useData();
 
   // Local state for form handling before save
   const [formData, setFormData] = useState(settings);
   const [saved, setSaved] = useState(false);
+  const [selectedTechId, setSelectedTechId] = useState('');
 
   useEffect(() => {
     setFormData(settings);
@@ -22,6 +24,46 @@ export const Configuracoes = () => {
     updateSettings(formData);
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
+  };
+
+  const handleTestNotification = async () => {
+    // Determine target technician
+    let targetTech = technicians.find(t => t.id === selectedTechId);
+
+    // Fallback: If no selection, pick first available (preserving old behavior as default, but warning user)
+    if (!targetTech && !selectedTechId) {
+      // Try auto-select strictly for convenience but prefer explicit
+      targetTech = technicians.find(t => t.status !== 'Inativo');
+    }
+
+    if (!targetTech) {
+      showToast('Nenhum técnico disponível ou selecionado.', 'error');
+      return;
+    }
+
+    const testTech = targetTech; // Alias for compatibility
+
+    const confirm = window.confirm(`Enviar notificação de teste para ${testTech.name}?`);
+    if (!confirm) return;
+
+    showToast('Enviando...');
+    const result = await sendPushNotification(
+      testTech.id,
+      'Teste de Sistema',
+      'Esta é uma notificação de verificação do painel.'
+    );
+
+    if (result && result.success) {
+      const expoData = result.data?.data;
+      if (expoData?.status === 'ok') {
+        alert(`SUCESSO! ✅\n\nExpo Recebeu: SIM\nStatus: ${expoData.status}\nTicket ID: ${expoData.id}\n\nAguarde alguns segundos. Se não chegar, verifique internet do celular.`);
+      } else {
+        // Expo received but returned logic error (e.g. invalid token)
+        alert(`ERRO NA EXPO! ⚠️\n\nO servidor enviou, mas a Expo recusou.\n\nDetalhes do Erro:\n${JSON.stringify(expoData, null, 2)}`);
+      }
+    } else {
+      alert(`ERRO DE CONEXÃO! ❌\n\nFalha ao chamar o servidor.\n${JSON.stringify(result?.error)}`);
+    }
   };
 
   return (
@@ -114,7 +156,9 @@ export const Configuracoes = () => {
               </div>
             </div>
 
-            <AdminAccountSettings />
+
+
+            <AdminAccountSettings technicians={technicians} showToast={showToast} />
           </div>
         </div>
       </div>
@@ -166,7 +210,7 @@ const Toggle = ({ label, sub, checked, onChange }: any) => (
     </div>
   </label>
 );
-const AdminAccountSettings = () => {
+const AdminAccountSettings = ({ technicians, showToast }: { technicians: any[], showToast: any }) => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [newEmail, setNewEmail] = useState('');
@@ -175,6 +219,42 @@ const AdminAccountSettings = () => {
 
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ text: string, type: 'success' | 'error' } | null>(null);
+
+  const [selectedTechId, setSelectedTechId] = useState('');
+
+  const handleTestNotification = async () => {
+    // Determine target technician
+    let targetTech = technicians.find(t => t.id === selectedTechId);
+
+    // Fallback: If no selection, pick first available (preserving old behavior as default, but warning user)
+    if (!targetTech) {
+      if (!selectedTechId) {
+        // Try auto-select strictly for convenience but prefer explicit
+        targetTech = technicians.find(t => t.status !== 'Inativo');
+      }
+    }
+
+    if (!targetTech) {
+      showToast('Nenhum técnico disponível ou selecionado.', 'error');
+      return;
+    }
+
+    const confirm = window.confirm(`Enviar notificação de teste para ${targetTech.name}?`);
+    if (!confirm) return;
+
+    showToast('Enviando...');
+    const result = await sendPushNotification(
+      targetTech.id,
+      'Teste de Sistema',
+      'Esta é uma notificação de verificação do painel.'
+    );
+
+    if (result && result.success) {
+      alert(`SUCESSO! ✅\n\nExpo Recebeu: SIM\nStatus: ${result.data?.data?.status}\nTicket ID: ${result.data?.data?.id}\n\nIsso confirma que o PAINEL enviou para a EXPO corretamente.\nSe não chegar no celular, o problema é entre Expo -> Firebase -> Android.`);
+    } else {
+      alert(`ERRO! ❌\n\nA Expo recusou ou falhou.\nDetalhes: ${JSON.stringify(result?.error)}`);
+    }
+  };
 
   const handleUpdatePassword = async () => {
     if (!newPassword || newPassword.length < 6) {
