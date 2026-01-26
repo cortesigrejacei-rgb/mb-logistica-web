@@ -372,11 +372,14 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         if (authError) {
           console.error("[SyncAuth] RPC Error:", authError);
-          // We continue but log it. If it's a critical error (like user not found), handle as needed.
+          showToast(`Erro na sincronização de login: ${authError.message}`, 'error');
         } else if (authResult && authResult.success === false) {
           console.warn("[SyncAuth] Sync failed:", authResult.message);
+          // Only show info/warn if user exists in DB but not in Auth
+          showToast(`Aviso: ${authResult.message}`, 'info');
         } else {
           console.log("[SyncAuth] Auth synced successfully.");
+          showToast('Login e perfil sincronizados!', 'success');
         }
       }
 
