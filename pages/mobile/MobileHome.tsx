@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
-import { useData, Collection } from '../../context/DataContext';
+import { useData } from '../../context/DataContext';
+import type { Collection } from '../../context/DataContext';
 import { useNavigate } from 'react-router-dom';
 
 export const MobileHome = () => {
@@ -9,7 +10,7 @@ export const MobileHome = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('Tudo');
   const [isRefreshing, setIsRefreshing] = useState(false);
-  
+
   if (!currentTechnician) return <div className="p-8 text-center text-white font-bold">Iniciando histórico...</div>;
 
   // Filtro base: tarefas deste técnico
@@ -18,14 +19,14 @@ export const MobileHome = () => {
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   // Filtro por busca
-  const filteredTasks = myTasks.filter(c => 
+  const filteredTasks = myTasks.filter(c =>
     c.client.toLowerCase().includes(searchTerm.toLowerCase()) ||
     c.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
     c.address.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const getStatusConfig = (status: string) => {
-    switch(status) {
+    switch (status) {
       case 'Coletado':
         return { label: 'Coletado', color: 'text-emerald-500', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', dot: 'bg-emerald-500' };
       case 'Em Rota':
@@ -46,13 +47,13 @@ export const MobileHome = () => {
 
     if (d.toDateString() === today.toDateString()) return 'Hoje';
     if (d.toDateString() === yesterday.toDateString()) return 'Ontem';
-    
+
     return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).replace('.', '');
   };
 
   return (
     <div className="flex flex-col h-full bg-[#111822] text-white font-display overflow-hidden relative">
-      
+
       {/* Header Fiel à Imagem */}
       <header className="px-6 py-5 flex items-center justify-between sticky top-0 bg-[#111822] z-30">
         <button onClick={() => navigate(-1)} className="text-white">
@@ -68,7 +69,7 @@ export const MobileHome = () => {
       <div className="px-6 py-2 space-y-5">
         <div className="relative">
           <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-[20px]">search</span>
-          <input 
+          <input
             type="text"
             placeholder="Buscar por cliente, OS ou endereço"
             className="w-full bg-[#1e293b] text-sm text-white placeholder:text-slate-500 rounded-2xl py-4 pl-12 pr-12 border border-[#233348] focus:outline-none focus:border-primary/50"
@@ -96,7 +97,7 @@ export const MobileHome = () => {
       {/* Lista de Recentes */}
       <div className="flex-1 overflow-y-auto px-6 pt-6 pb-32 scrollbar-hide">
         <h3 className="text-[11px] font-black text-slate-500 uppercase tracking-[2px] mb-4">Recentes</h3>
-        
+
         <div className="flex flex-col gap-4">
           {filteredTasks.map((task, index) => {
             const config = getStatusConfig(task.status);
@@ -104,7 +105,7 @@ export const MobileHome = () => {
             const modemType = task.notes?.includes('Modem') ? task.notes : 'Modem GPON';
 
             return (
-              <div 
+              <div
                 key={task.id}
                 onClick={() => navigate(`/mobile/coleta/${task.id}`)}
                 className="bg-[#192433] rounded-[28px] p-5 border border-[#233348] shadow-md active:scale-[0.98] transition-all animate-fadeIn"
@@ -113,13 +114,13 @@ export const MobileHome = () => {
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex items-center gap-4">
                     {index === 0 ? (
-                       <div className="size-12 rounded-full overflow-hidden border-2 border-slate-700 shadow-lg">
-                          <img src={`https://ui-avatars.com/api/?name=${task.client}&background=random&color=fff`} alt="" className="w-full h-full object-cover" />
-                       </div>
+                      <div className="size-12 rounded-full overflow-hidden border-2 border-slate-700 shadow-lg">
+                        <img src={`https://ui-avatars.com/api/?name=${task.client}&background=random&color=fff`} alt="" className="w-full h-full object-cover" />
+                      </div>
                     ) : (
-                       <div className="size-12 rounded-full bg-[#233348] flex items-center justify-center text-primary font-black text-sm border border-primary/20">
-                          {initials}
-                       </div>
+                      <div className="size-12 rounded-full bg-[#233348] flex items-center justify-center text-primary font-black text-sm border border-primary/20">
+                        {initials}
+                      </div>
                     )}
                     <div>
                       <h4 className="font-black text-white text-base leading-tight">{task.client}</h4>
@@ -142,7 +143,7 @@ export const MobileHome = () => {
                     <span className="material-symbols-outlined text-[18px]">router</span>
                     <span className="text-xs font-bold">{modemType}</span>
                   </div>
-                  
+
                   <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border ${config.border} ${config.bg}`}>
                     <span className={`w-2 h-2 rounded-full ${config.dot}`}></span>
                     <span className={`text-[10px] font-black uppercase tracking-widest ${config.color}`}>{config.label}</span>

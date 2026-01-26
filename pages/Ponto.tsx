@@ -1,5 +1,6 @@
 import React from 'react';
-import { useData, Technician } from '../context/DataContext';
+import { useData } from '../context/DataContext';
+import type { Technician } from '../context/DataContext';
 
 export const Ponto = () => {
   const { technicians, timeEntries } = useData();

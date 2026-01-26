@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { useData, StockItem } from '../context/DataContext';
+import { useData } from '../context/DataContext';
+import type { StockItem } from '../context/DataContext';
 
 export const Estoque = () => {
   const { stockItems, addStockItem, updateStockItem, deleteStockItem, technicians } = useData();
