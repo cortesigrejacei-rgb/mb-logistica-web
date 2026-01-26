@@ -353,6 +353,34 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const updateTechnician = async (id: string, data: Partial<Technician>) => {
     try {
+      // 1. Sync with Auth if Name, Email or Role changed
+      const originalTech = technicians.find(t => t.id === id);
+      const needsAuthSync = originalTech && (
+        (data.email && data.email !== originalTech.email) ||
+        (data.name && data.name !== originalTech.name) ||
+        (data.role && data.role !== originalTech.role)
+      );
+
+      if (needsAuthSync) {
+        console.log(`[SyncAuth] Updating Auth record for ${originalTech.email}...`);
+        const { data: authResult, error: authError } = await supabase.rpc('sync_technician_auth', {
+          current_email: originalTech.email,
+          updated_email: data.email || originalTech.email,
+          updated_name: data.name || originalTech.name,
+          updated_role: data.role || originalTech.role
+        });
+
+        if (authError) {
+          console.error("[SyncAuth] RPC Error:", authError);
+          // We continue but log it. If it's a critical error (like user not found), handle as needed.
+        } else if (authResult && authResult.success === false) {
+          console.warn("[SyncAuth] Sync failed:", authResult.message);
+        } else {
+          console.log("[SyncAuth] Auth synced successfully.");
+        }
+      }
+
+      // 2. Update Public DB
       const updatePayload = { ...data, last_seen: new Date().toISOString() };
       const { error } = await supabase.from('technicians').update(updatePayload).eq('id', id);
       if (error) throw error;
