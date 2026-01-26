@@ -372,13 +372,20 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const deleteTechnician = async (id: string) => {
     try {
-      const { error } = await supabase.from('technicians').delete().eq('id', id);
+      console.log(`[DeleteTechnician] Calling RPC nuke_technician for ${id}...`);
+      const { data, error } = await supabase.rpc('nuke_technician', { target_id: id });
+
       if (error) throw error;
-      showToast('Técnico removido com sucesso.', 'success');
+
+      if (data && data.success === false) {
+        throw new Error(data.message);
+      }
+
+      showToast('Técnico e históricos removidos com sucesso.', 'success');
       fetchData();
     } catch (error: any) {
-      console.error("Error deleting technician:", error);
-      showToast(`Erro ao excluir técnico: ${error.message || 'Verifique se ele possui coletas vinculadas.'}`, 'error');
+      console.error("Error nuking technician:", error);
+      showToast(`Erro ao excluir técnico: ${error.message || 'Erro desconhecido.'}`, 'error');
     }
   };
 
