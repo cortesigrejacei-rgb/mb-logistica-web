@@ -7,7 +7,7 @@ import { supabase } from '../lib/supabaseClient';
 export const Mapa = () => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<L.Map | null>(null);
-  const { technicians, collections, fixGeocodes, updateCollection, unassignCollections } = useData();
+  const { technicians, collections, fixGeocodes, updateCollection, unassignCollections, optimizeRouteForTechnician } = useData();
 
   const [selectedTechId, setSelectedTechId] = React.useState<string | null>(null);
   const [routeStats, setRouteStats] = React.useState<{ distance: number; duration: number } | null>(null);

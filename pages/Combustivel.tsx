@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useData, Collection } from '../context/DataContext';
+import { useData } from '../context/DataContext';
+import type { Collection } from '../context/DataContext';
 import { supabase } from '../lib/supabaseClient';
 
 export const Combustivel = () => {

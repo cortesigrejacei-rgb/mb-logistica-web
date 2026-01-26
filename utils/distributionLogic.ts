@@ -1,4 +1,4 @@
-import { Collection, Technician } from '../context/DataContext';
+import type { Collection, Technician } from '../context/DataContext';
 import { parseAddress, normalizeCity, normalizeNeighborhood } from './addressParser';
 
 export interface TechAssignment {

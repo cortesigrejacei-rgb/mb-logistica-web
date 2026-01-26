@@ -1,6 +1,7 @@
 
 import React, { useState, useRef } from 'react';
-import { useData, Collection } from '../context/DataContext';
+import { useData } from '../context/DataContext';
+import type { Collection } from '../context/DataContext';
 import { smartDistribute, TechAssignment } from '../utils/distributionLogic';
 import { parseAddress, normalizeCity } from '../utils/addressParser';
 import { sendPushNotification } from '../utils/notificationUtils';
