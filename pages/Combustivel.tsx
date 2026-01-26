@@ -376,7 +376,7 @@ export const Combustivel = () => {
                                                     {item.actual_distance_km ? item.actual_distance_km.toFixed(1) : '0.0'} km
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-4 text-emerald-400 text-sm font-bold">R$ {item.estimated_fuel_cost.toFixed(2)}</td>
+                                            <td className="px-6 py-4 text-emerald-400 text-sm font-bold">R$ {(item.estimated_fuel_cost || 0).toFixed(2)}</td>
                                             <td className="px-6 py-4 text-slate-400 text-xs font-mono">{lastUpdate}</td>
                                             <td className="px-6 py-4">
                                                 <span className="px-3 py-1 rounded-full bg-blue-500/20 text-blue-400 text-xs font-bold uppercase tracking-wide">
