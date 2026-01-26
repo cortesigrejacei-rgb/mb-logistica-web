@@ -76,22 +76,31 @@ export const Dashboard = () => {
           bounds.extend([lat, lng]);
           hasPoints = true;
 
-          // 2. Draw Routes (Flight Path)
+          // 2. Draw Routes (Flight Path - Round Trip)
           // Using Active Collections logic
           const techRoute = collections
             .filter(c => c.driverId === t.id && (c.status === 'Pendente' || c.status === 'Em Rota') && (c.date === new Date().toISOString().split('T')[0] || c.status !== 'Coletado'))
             .sort((a, b) => (a.sequence_order || 999) - (b.sequence_order || 999));
 
           if (techRoute.length > 0) {
-            const routePoints: L.LatLngExpression[] = [[lat, lng]]; // Start at Tech Location
+            const startLat = t.start_lat || t.lat || -25.4297;
+            const startLng = t.start_lng || t.lng || -49.2719;
+            const endLat = t.end_lat || startLat;
+            const endLng = t.end_lng || startLng;
+
+            const routePoints: L.LatLngExpression[] = [[startLat, startLng]];
 
             techRoute.forEach(c => {
               if (c.lat && c.lng) {
                 routePoints.push([c.lat, c.lng]);
-                // Extend bounds
                 bounds.extend([c.lat, c.lng]);
               }
             });
+
+            // Return to end location (Home or specific end base)
+            routePoints.push([endLat, endLng]);
+            bounds.extend([startLat, startLng]);
+            bounds.extend([endLat, endLng]);
 
             // Draw Line
             if (routePoints.length > 1) {

@@ -75,22 +75,22 @@ export const Mapa = () => {
         techCollections.forEach(c => {
           if (c.lat && c.lng) coords.push(`${c.lng},${c.lat}`);
         });
-        coords.push(`${startLng},${startLat}`); // Return to base
+
+        // Use end location if available, otherwise return to start
+        const endLat = tech.end_lat || startLat;
+        const endLng = tech.end_lng || startLng;
+        coords.push(`${endLng},${endLat}`);
 
         if (coords.length < 2) continue;
 
-        // Call OSRM
+        // Call OSRM (HTTPS)
         try {
-          // Check if already exists to avoid spamming API? 
-          // Let's rely on the fact that this runs on collections change.
-
-          const url = `http://router.project-osrm.org/route/v1/driving/${coords.join(';')}?overview=false`;
+          const url = `https://router.project-osrm.org/route/v1/driving/${coords.join(';')}?overview=false`;
           const response = await fetch(url);
           const json = await response.json();
 
           if (json.code === 'Ok' && json.routes[0]) {
             const route = json.routes[0];
-            const serviceTimeSeconds = techCollections.length * 600;
             const totalDistKm = route.distance / 1000;
 
             // Upsert Summary
@@ -100,7 +100,7 @@ export const Mapa = () => {
               total_distance_km: totalDistKm,
               collection_count: techCollections.length,
               status: 'Calculated (Auto-Map)',
-              geometry: route.geometry // Persist the GeoJSON
+              geometry: route.geometry // Persist the GeoJSON if available
             }, { onConflict: 'technician_id,date' });
 
             if (!error) console.log(`[Mapa] Synced route for ${tech.name}: ${totalDistKm.toFixed(2)}km`);
@@ -203,13 +203,29 @@ export const Mapa = () => {
       techCollections.forEach(c => {
         if (c.lat && c.lng) coords.push(`${c.lng},${c.lat}`);
       });
-      // Add Return to Base (Round Trip)
-      coords.push(`${startLng},${startLat}`);
+
+      // Use end location if available, otherwise return to start
+      const endLat = tech.end_lat || startLat;
+      const endLng = tech.end_lng || startLng;
+      coords.push(`${endLng},${endLat}`);
+
+      // Draw End Marker if different from Start
+      if (endLat !== startLat || endLng !== startLng) {
+        const flagIcon = L.divIcon({
+          className: 'custom-flag-icon',
+          html: `<div class="w-8 h-8 bg-emerald-800 rounded-full border-2 border-white flex items-center justify-center text-white shadow-md"><span class="material-symbols-outlined text-sm">flag</span></div>`,
+          iconSize: [32, 32],
+          iconAnchor: [16, 16]
+        });
+        L.marker([endLat, endLng], { icon: flagIcon })
+          .bindPopup(`<div class="font-bold text-slate-800">Fim</div><div class="text-xs text-slate-500">Destino de Chegada</div>`)
+          .addTo(routeLayerRef.current!);
+      }
 
       if (coords.length < 2) return;
 
       try {
-        const url = `http://router.project-osrm.org/route/v1/driving/${coords.join(';')}?overview=full&geometries=geojson`;
+        const url = `https://router.project-osrm.org/route/v1/driving/${coords.join(';')}?overview=full&geometries=geojson`;
         const response = await fetch(url);
         const json = await response.json();
 
@@ -217,13 +233,7 @@ export const Mapa = () => {
           const route = json.routes[0];
           const routeGeoJSON = route.geometry;
 
-          // Calculate Service Time (10 mins per stop)
-          // techCollections includes only Pendente/Em Rota/etc based on filter above?
-          // The filter above is: status !== 'Coletado' && status !== 'Falha'
-          // So these are active stops.
           const serviceTimeSeconds = techCollections.length * 600; // 10 minutes * 60 seconds
-
-          // ... (inside fetchRoute success)
 
           // Set Stats
           const totalDistKm = route.distance / 1000;
@@ -232,17 +242,13 @@ export const Mapa = () => {
             duration: route.duration + serviceTimeSeconds  // seconds
           });
 
-          // PERSIST TO DB (Sync with Fuel Tab)
-          // Find the most common date in this route, or default to today
+          // PERSIST TO DB
           const dateCounts: Record<string, number> = {};
           techCollections.forEach(c => {
             if (c.date) dateCounts[c.date] = (dateCounts[c.date] || 0) + 1;
           });
           const bestDate = Object.keys(dateCounts).sort((a, b) => dateCounts[b] - dateCounts[a])[0] || new Date().toISOString().split('T')[0];
 
-          // Save Summary
-          // Note: We don't calculate COST here because we don't have fuel prices handy. 
-          // Combustivel tab will fill that in.
           try {
             const { error } = await supabase.from('route_summaries').upsert({
               technician_id: tech.id,
@@ -250,9 +256,6 @@ export const Mapa = () => {
               total_distance_km: totalDistKm,
               collection_count: techCollections.length,
               status: 'Calculated (Map)'
-              // We preserve existing estimated_fuel_cost if we use upsert properly? 
-              // Upsert usually replaces. We might want to keep cost if it exists?
-              // Simple upsert replaces. Combustivel will see null cost and should recalculate cost only.
             }, { onConflict: 'technician_id,date' });
 
             if (error) console.error("Failed to save map stats:", error);
@@ -263,7 +266,6 @@ export const Mapa = () => {
 
           // Draw Polyline
           const polyline = L.geoJSON(routeGeoJSON, {
-            // ...
             style: { color: '#3b82f6', weight: 4, opacity: 0.7 }
           }).addTo(routeLayerRef.current!);
 
