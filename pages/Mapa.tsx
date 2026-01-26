@@ -484,6 +484,19 @@ export const Mapa = () => {
                 {collections.filter(c => c.driverId === selectedTechId && c.status !== 'Coletado' && c.status !== 'Falha').length}
               </span>
             </div>
+
+            <button
+              onClick={async () => {
+                const today = new Date().toISOString().split('T')[0];
+                if (optimizeRouteForTechnician) {
+                  await optimizeRouteForTechnician(selectedTechId, today);
+                }
+              }}
+              className="mt-4 w-full bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-black uppercase tracking-widest py-2.5 rounded-lg flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-500/20"
+            >
+              <span className="material-symbols-outlined text-sm">magic_button</span>
+              Otimizar Menor KM
+            </button>
           </div>
         )}
 
