@@ -371,9 +371,15 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const deleteTechnician = async (id: string) => {
-    await supabase.from('technicians').delete().eq('id', id);
-    showToast('Técnico removido.', 'error');
-    fetchData();
+    try {
+      const { error } = await supabase.from('technicians').delete().eq('id', id);
+      if (error) throw error;
+      showToast('Técnico removido com sucesso.', 'success');
+      fetchData();
+    } catch (error: any) {
+      console.error("Error deleting technician:", error);
+      showToast(`Erro ao excluir técnico: ${error.message || 'Verifique se ele possui coletas vinculadas.'}`, 'error');
+    }
   };
 
   const addCollection = async (colData: Omit<Collection, 'id' | 'status'> & { id?: string; date?: string }, skipRefresh?: boolean) => {
