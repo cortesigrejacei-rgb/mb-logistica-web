@@ -425,7 +425,7 @@ export const Combustivel = () => {
                                         <input type="number" step="0.01" value={newPriceDie} onChange={e => setNewPriceDie(parseFloat(e.target.value))} className="w-full bg-surface-dark border border-border-dark text-white rounded-lg px-3 py-2 text-sm" />
                                     </div>
                                 </div>
-                                <button onClick={handleSaveStation} className="md:col-span-1 bg-primary text-white rounded-lg font-bold text-xs uppercase tracking-wider py-2 hover:bg-blue-600 transition-colors h-full mt-auto">
+                                <button onClick={handleSaveStation} className="md:col-span-1 bg-primary text-white rounded-lg font-bold text-xs uppercase tracking-wider py-2 hover:bg-blue-600 transition-all h-full mt-auto flex items-center justify-center">
                                     Salvar
                                 </button>
                             </div>
@@ -447,9 +447,9 @@ export const Combustivel = () => {
                                             <tr key={station.id} className="hover:bg-white/5">
                                                 <td className="px-4 py-3 text-white font-bold">{station.name}</td>
                                                 <td className="px-4 py-3 text-slate-400 text-xs">{station.city} - {station.state}</td>
-                                                <td className="px-4 py-3 text-slate-300 text-right">R$ {station.price_gasoline.toFixed(2)}</td>
-                                                <td className="px-4 py-3 text-slate-300 text-right">R$ {station.price_ethanol.toFixed(2)}</td>
-                                                <td className="px-4 py-3 text-slate-300 text-right">R$ {station.price_diesel.toFixed(2)}</td>
+                                                <td className="px-4 py-3 text-slate-300 text-right">R$ {(station.price_gasoline || 0).toFixed(2)}</td>
+                                                <td className="px-4 py-3 text-slate-300 text-right">R$ {(station.price_ethanol || 0).toFixed(2)}</td>
+                                                <td className="px-4 py-3 text-slate-300 text-right">R$ {(station.price_diesel || 0).toFixed(2)}</td>
                                                 <td className="px-4 py-3 text-right">
                                                     <button onClick={() => handleDeleteStation(station.id)} className="text-red-500 hover:text-red-400">
                                                         <span className="material-symbols-outlined text-[18px]">delete</span>
