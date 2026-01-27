@@ -716,195 +716,156 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     showToast("Banco de dados resetado.", 'error');
   };
 
-  return (
-    <DataContext.Provider value={{
-      technicians,
-      collections,
-      stockItems,
-      timeEntries,
-      settings,
-      loading,
-      toasts,
-      currentTechnician,
-      showToast,
-      addTechnician,
-      updateTechnician,
-      deleteTechnician,
-      addCollection,
-      updateCollectionStatus,
-      deleteCollection,
-      addStockItem,
-      updateStockItem,
-      deleteStockItem,
-      getTechnicianById,
-      updateSettings,
-      resetData,
-      uploadFile,
-      refreshData: fetchData,
-      optimizeRouteForTechnician: async (techId: string, date: string) => {
-        try {
-          console.log(`[Optimization] Starting for Tech ${techId} on ${date}`);
+  const optimizeRouteForTechnician = async (techId: string, date: string) => {
+    try {
+      console.log(`[Optimization] Starting for Tech ${techId} on ${date}`);
 
-          // 1. Get Technician Details (Start/End)
-          const tech = technicians.find(t => t.id === techId);
-          if (!tech) throw new Error("Technician not found");
+      const tech = technicians.find(t => t.id === techId);
+      if (!tech) throw new Error("Technician not found");
 
-          // 2. Get Collections for this Tech & Date
-          // FETCH FROM DB DIRECTLY to ensure we have the latest data (avoiding state staleness after batch import)
-          const { data: dbCollections } = await supabase
-            .from('collections')
-            .select('*')
-            .eq('driver_id', techId)
-            .eq('date', date)
-            .in('status', ['Pendente', 'Em Rota']);
+      const { data: dbCollections } = await supabase
+        .from('collections')
+        .select('*')
+        .eq('driver_id', techId)
+        .eq('date', date)
+        .in('status', ['Pendente', 'Em Rota']);
 
-          if (!dbCollections || dbCollections.length === 0) {
-            console.log("[Optimization] No collections to optimize (DB Empty for this date).");
+      if (!dbCollections || dbCollections.length === 0) {
+        console.log("[Optimization] No collections to optimize (DB Empty for this date).");
+        return;
+      }
 
-            // DEBUG: WIDE NET QUERY
-            // Check if there are ANY collections for this driver, to diagnose date mismatch vs missing data
-            const { data: allTechCols } = await supabase
-              .from('collections')
-              .select('id, date, status, driver_id')
-              .eq('driver_id', techId);
+      const routeCollections = dbCollections.map(mapCollectionFromDB);
 
-            console.log(`[Optimization DEBUG] Found ${allTechCols?.length || 0} TOTAL collections for tech ${techId}.`);
-            if (allTechCols && allTechCols.length > 0) {
-              console.log("[Optimization DEBUG] Dates found:", allTechCols.map(c => c.date));
-            } else {
-              console.log("[Optimization DEBUG] TRULY EMPTY. Persistence failed or RLS blocking.");
-            }
+      const startPoint = {
+        lat: tech.start_lat || tech.lat || -25.4297,
+        lng: tech.start_lng || tech.lng || -49.2719
+      };
 
-            return;
-          }
+      const stops = routeCollections.map(c => ({
+        lat: c.lat || 0,
+        lng: c.lng || 0
+      }));
 
-          const routeCollections = dbCollections.map(mapCollectionFromDB);
+      const endPoint = (tech.end_lat && tech.end_lng) ? { lat: tech.end_lat, lng: tech.end_lng } : undefined;
 
-          // 3. Prepare Points
-          const startPoint = {
-            lat: tech.start_lat || tech.lat || -25.4297,
-            lng: tech.start_lng || tech.lng || -49.2719
-          };
+      const result = await calculateOptimalRoute(startPoint, stops, endPoint);
 
-          const stops = routeCollections.map(c => ({
-            lat: c.lat || 0,
-            lng: c.lng || 0
-          }));
+      if (result.optimizedOrder && result.optimizedOrder.length > 0) {
+        console.log("[Optimization] Order found:", result.optimizedOrder);
 
-          const endPoint = (tech.end_lat && tech.end_lng) ? { lat: tech.end_lat, lng: tech.end_lng } : undefined;
+        const updates = result.optimizedOrder.map((originalIndex, sequence) => {
+          const col = routeCollections[originalIndex];
+          if (!col) return null;
+          return supabase.from('collections').update({ sequence_order: sequence + 1 }).eq('id', col.id);
+        });
 
-          // 4. Call Optimizer
-          // Import dynamically or assume it's available? 
-          // We need to import calculateOptimalRoute at the top of file or here.
-          // Since DataContext is .tsx, we can import.
-          // But I cannot add import at top with this tool easily without reading whole file.
-          // Wait, I can try to use the global function if I exported it globally? No.
-          // I should have added the import first. 
-          // I will assume I can add the import in a separate step or try to use a require if possible, 
-          // but 'import' is best. For now, I will create the function skeleton and then add the import at top.
+        await Promise.all(updates);
 
-          // Re-viewing the file Plan: I will add this function now, but I need to `import { calculateOptimalRoute } from '../lib/RouteOptimizer';`
-          // calling `calculateOptimalRoute` here directly.
+        const estimatedCost = (result.totalDistanceKm / (tech.avg_consumption || 10)) * 5.89;
 
-          // const { calculateOptimalRoute } = require('../lib/RouteOptimizer'); // NOW IMPORTED AT TOP
+        await supabase.from('route_summaries').delete().match({ technician_id: techId, date: date });
+        await supabase.from('route_summaries').insert({
+          technician_id: techId,
+          date: date,
+          total_distance_km: result.totalDistanceKm,
+          estimated_fuel_cost: estimatedCost,
+          collection_count: routeCollections.length,
+          status: 'Optimized'
+        });
 
-          const result = await calculateOptimalRoute(startPoint, stops, endPoint);
-
-          if (result.optimizedOrder && result.optimizedOrder.length > 0) {
-            console.log("[Optimization] Order found:", result.optimizedOrder);
-
-            // 5. Update Sequence in DB
-            // optimizedOrder contains indices of 'stops' (and thus 'routeCollections')
-
-            const updates = result.optimizedOrder.map((originalIndex, sequence) => {
-              const col = routeCollections[originalIndex];
-              if (!col) return null;
-              return supabase.from('collections').update({ sequence_order: sequence + 1 }).eq('id', col.id);
-            });
-
-            await Promise.all(updates);
-
-            // 6. Persist Summary for Fuel Module
-            // Calculate mock cost (or simple average) just to have something.
-            // Combustivel.tsx does a deeper calc, but this ensures non-zero display initially.
-            const estimatedCost = (result.totalDistanceKm / (tech.avg_consumption || 10)) * 5.89; // Avg Gas Price
-
-            await supabase.from('route_summaries').delete().match({ technician_id: techId, date: date });
-            await supabase.from('route_summaries').insert({
-              technician_id: techId,
-              date: date,
-              total_distance_km: result.totalDistanceKm,
-              estimated_fuel_cost: estimatedCost,
-              collection_count: routeCollections.length,
-              status: 'Optimized'
-            });
-
-            showToast("Rota otimizada e sequenciada com sucesso!", 'success');
-            fetchData(); // Refresh to see order
-          }
-
-        } catch (e) {
-          console.error("Optimization failed:", e);
-          showToast("Erro ao otimizar rota.", 'error');
-        }
-      },
-      deleteCollections: async (ids: string[]) => {
-        try {
-          const { error } = await supabase.from('collections').delete().in('id', ids);
-          if (error) throw error;
-          showToast(`${ids.length} coletas excluídas.`, 'error');
-          fetchData();
-        } catch (e) {
-          console.error("Batch delete error:", e);
-          showToast("Erro ao excluir coletas.", 'error');
-        }
-      },
-      unassignCollections: async (ids: string[]) => {
-        console.log('[unassign] Requesting remove for:', ids);
-        try {
-          // If IDs are strings but DB is int, this helps. If DB is UUID, this shouldn't hurt unless IDs are uuid strings.
-          // Better approach: Let Supabase handle it, but if count is null, maybe RLS is issue.
-          // We will remove the 'count' check or just rely on error null check.
-
-          const { error } = await supabase
-            .from('collections')
-            .update({ driver_id: null, status: 'Pendente' })
-            .in('id', ids);
-
-          if (error) throw error;
-
-          showToast(`${ids.length} coletas desvinculadas.`);
-          fetchData(); // Force refresh
-        } catch (e) {
-          console.error("Batch unassign error:", e);
-          showToast("Erro ao desvincular técnicos.", 'error');
-        }
-      },
-      fixGeocodes: async () => {
-        const pendingCols = collections; // Filter if needed
-        showToast(`Iniciando correção de GPS para ${pendingCols.length} coletas...`, 'info');
-
-        let count = 0;
-        for (const col of pendingCols) {
-          await new Promise(r => setTimeout(r, 1200));
-
-          const realCoords = await geocodeAddress(col.address, col.city);
-          if (realCoords) {
-            await supabase.from('collections').update({
-              lat: realCoords.lat,
-              lng: realCoords.lng
-            }).eq('id', col.id);
-            count++;
-            console.log(`[GeoFix] Updated ${col.client} (${count}/${pendingCols.length})`);
-          }
-        }
-        showToast(`Correção de GPS finalizada! ${count} atualizados.`, 'success');
+        showToast("Rota otimizada e sequenciada com sucesso!", 'success');
         fetchData();
-      },
-      updateCollection
-    }}>
+      }
+
+    } catch (e) {
+      console.error("Optimization failed:", e);
+      showToast("Erro ao otimizar rota.", 'error');
+    }
+  };
+
+  const deleteCollections = async (ids: string[]) => {
+    try {
+      const { error } = await supabase.from('collections').delete().in('id', ids);
+      if (error) throw error;
+      showToast(`${ids.length} coletas excluídas.`, 'error');
+      fetchData();
+    } catch (e) {
+      console.error("Batch delete error:", e);
+      showToast("Erro ao excluir coletas.", 'error');
+    }
+  };
+
+  const unassignCollections = async (ids: string[]) => {
+    try {
+      const { error } = await supabase
+        .from('collections')
+        .update({ driver_id: null, status: 'Pendente' })
+        .in('id', ids);
+
+      if (error) throw error;
+      showToast(`${ids.length} coletas desvinculadas.`);
+      fetchData();
+    } catch (e) {
+      console.error("Batch unassign error:", e);
+      showToast("Erro ao desvincular técnicos.", 'error');
+    }
+  };
+
+  const fixGeocodes = async () => {
+    const pendingCols = collections;
+    showToast(`Iniciando correção de GPS para ${pendingCols.length} coletas...`, 'info');
+    let count = 0;
+    for (const col of pendingCols) {
+      await new Promise(r => setTimeout(r, 1200));
+      const realCoords = await geocodeAddress(col.address, col.city);
+      if (realCoords) {
+        await supabase.from('collections').update({
+          lat: realCoords.lat,
+          lng: realCoords.lng
+        }).eq('id', col.id);
+        count++;
+      }
+    }
+    showToast(`Correção de GPS finalizada! ${count} atualizados.`, 'success');
+    fetchData();
+  };
+
+  const contextValue: DataContextType = {
+    technicians,
+    collections,
+    stockItems,
+    timeEntries,
+    settings,
+    loading,
+    toasts,
+    currentTechnician,
+    showToast,
+    addTechnician,
+    updateTechnician,
+    deleteTechnician,
+    addCollection,
+    updateCollectionStatus,
+    deleteCollection,
+    addStockItem,
+    updateStockItem,
+    deleteStockItem,
+    getTechnicianById,
+    updateSettings,
+    resetData,
+    uploadFile,
+    refreshData: fetchData,
+    optimizeRouteForTechnician,
+    deleteCollections,
+    unassignCollections,
+    fixGeocodes,
+    updateCollection
+  };
+
+  return (
+    <DataContext.Provider value={contextValue}>
       {children}
-    </DataContext.Provider >
+    </DataContext.Provider>
   );
 };
 
