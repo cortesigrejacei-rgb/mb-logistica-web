@@ -90,7 +90,7 @@ export const geocodeAddress = async (address: string, city?: string, state?: str
         // 2. Level 2: Neighborhood + City (Fuzzy street)
         if (neighborhood && city) {
             console.log('[geoUtils] Level 1 failed. Trying Level 2: Neighborhood + City...');
-            let level2Query = `${neighborhood}, ${city} - ${state || ''}, Brazil`;
+            let level2Query = `${neighborhood}, ${city}${state ? ' - ' + state : ''}, Brazil`;
             result = await queryNominatim(level2Query);
             if (result && isCityMatch(result, city)) {
                 console.log('[geoUtils] Level 2 Success:', result.display_name);

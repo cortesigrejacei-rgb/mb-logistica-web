@@ -1,5 +1,6 @@
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import type { ReactNode } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { sendPushNotification } from '../utils/notificationUtils';
 import { createClient } from '@supabase/supabase-js';
@@ -329,7 +330,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // 2. Create Technician Profile in DB
       const newTech = {
         ...techData,
-        id: `#TEC-${Math.floor(Math.random() * 10000)}`,
+        id: authData.user!.id,
         avatar: techData.avatar || `https://ui-avatars.com/api/?name=${techData.name}&background=random&color=fff`,
         lat: -25.4297,
         lng: -49.2719,
