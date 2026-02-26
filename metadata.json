@@ -1,0 +1,10 @@
+
+{
+  "name": "Vupty Admin Dashboard",
+  "description": "A comprehensive logistics and management dashboard for modem operations, featuring real-time maps, technician management, finance, and stock control.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ]
+}
