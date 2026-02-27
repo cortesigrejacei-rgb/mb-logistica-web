@@ -141,19 +141,42 @@ export const Mapa = () => {
     // Clear previous route
     routeLayerRef.current.clearLayers();
 
-    // Filter and Sort Collections
+    // Filter and Sort Collections (Include completed for today to draw full path)
+    const today = new Date().toISOString().split('T')[0];
     const techCollections = collections
-      .filter(c => c.driverId === tech.id && c.status !== 'Coletado' && c.status !== 'Falha')
-      .sort((a, b) => ((a.sequence_order || 999) - (b.sequence_order || 999)) || a.id.localeCompare(b.id));
+      .filter(c => c.driverId === tech.id && (c.date === today || (c.status !== 'Coletado' && c.status !== 'Falha') || (c.updatedAt && String(c.updatedAt).startsWith(today))))
+      .sort((a, b) => {
+        const aCompleted = a.status === 'Coletado' || a.status === 'Falha';
+        const bCompleted = b.status === 'Coletado' || b.status === 'Falha';
+        if (aCompleted && !bCompleted) return -1;
+        if (!aCompleted && bCompleted) return 1;
+        return ((a.sequence_order || 999) - (b.sequence_order || 999)) || a.id.localeCompare(b.id);
+      });
 
     if (techCollections.length === 0) return;
 
     // 1. Draw Stops
     techCollections.forEach((col, index) => {
       if (col.lat && col.lng) {
+        const isCompleted = col.status === 'Coletado';
+        const isFailed = col.status === 'Falha';
+
+        let bgColor = 'bg-blue-600';
+        let badgeColor = 'bg-blue-100 text-blue-700';
+
+        if (isCompleted) {
+          bgColor = 'bg-emerald-600';
+          badgeColor = 'bg-emerald-100 text-emerald-700';
+        } else if (isFailed) {
+          bgColor = 'bg-red-600';
+          badgeColor = 'bg-red-100 text-red-700';
+        }
+
+        const opacity = (isCompleted || isFailed) ? 'opacity-70' : '';
+
         const icon = L.divIcon({
           className: 'custom-number-icon',
-          html: `<div class="w-6 h-6 bg-blue-600 rounded-full border-2 border-white flex items-center justify-center text-white text-xs font-bold shadow-md">${index + 1}</div>`,
+          html: `<div class="w-6 h-6 ${bgColor} rounded-full border-2 border-white flex items-center justify-center text-white text-xs font-bold shadow-md ${opacity}">${index + 1}</div>`,
           iconSize: [24, 24],
           iconAnchor: [12, 12]
         });
@@ -163,7 +186,7 @@ export const Mapa = () => {
             <div class="min-w-[150px]">
                 <div class="font-bold text-slate-800 border-b pb-1 mb-1 flex justify-between items-center">
                     <span>${index + 1}. ${col.client}</span>
-                    <span class="text-[10px] bg-blue-100 text-blue-700 px-1 rounded">${col.status}</span>
+                    <span class="text-[10px] ${badgeColor} px-1 rounded">${col.status}</span>
                 </div>
                 <div class="text-xs text-slate-600 mb-1">
                     <span class="material-symbols-outlined text-[10px] align-middle mr-1">location_on</span>
@@ -331,11 +354,10 @@ export const Mapa = () => {
                 <div class="relative flex items-center justify-center cursor-pointer transform transition-transform hover:scale-110">
                   <div class="absolute w-8 h-8 ${selectedTechId === tech.id ? 'bg-blue-500' : 'bg-primary/30'} rounded-full ${selectedTechId === tech.id ? 'animate-pulse' : 'animate-ping'}"></div>
                   <div class="relative w-8 h-8 rounded-full border-2 ${selectedTechId === tech.id ? 'border-blue-400' : 'border-white'} overflow-hidden shadow-lg bg-[#1e293b]">
-                    <img 
-                      src="${tech.avatar}" 
+                    <img src="${tech.avatar}" 
                       onerror="this.src='https://ui-avatars.com/api/?name=${tech.name}&background=1e293b&color=fff'" 
                       class="w-full h-full object-cover" 
-                    />
+                     alt="Imagem" />
                   </div>
                   <div class="absolute -bottom-1 -right-1 bg-emerald-500 w-3 h-3 rounded-full border border-[#1e293b]"></div>
                 </div>
@@ -426,8 +448,13 @@ export const Mapa = () => {
         <div className="p-4 border-t border-[#1f2d3d] bg-[#0f172a]">
           <button
             onClick={() => {
-              if (confirm('Isso vai verificar o endereço de TODAS as paradas no OpenStreetMap. Pode demorar alguns minutos. Continuar?')) {
-                fixGeocodes();
+              const tech = technicians.find(t => t.id === selectedTechId);
+              const msg = selectedTechId
+                ? `Deseja corrigir o GPS de TODAS as paradas do técnico ${tech?.name}?`
+                : 'Isso vai verificar o endereço de TODAS as paradas de TODOS os técnicos no OpenStreetMap. Pode demorar alguns minutos. Continuar?';
+
+              if (confirm(msg)) {
+                fixGeocodes(selectedTechId || undefined);
               }
             }}
             className="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs py-2 px-4 rounded transition-colors border border-slate-700"

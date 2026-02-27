@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { useData } from '../context/DataContext';
+import { WhatsAppButton } from '../components/WhatsAppButton';
 
 export const Clientes = () => {
     const { technicians } = useData();
@@ -162,11 +163,11 @@ export const Clientes = () => {
                         </div>
                         <div className="relative w-full md:w-96">
                             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
-                            <input
-                                type="text"
+                            <input type="text"
                                 placeholder="Buscar Cliente..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
+                                aria-label="Buscar Cliente..."
                                 className="w-full bg-[#1a232e] border border-[#233348] rounded-xl pl-10 pr-4 py-3 text-white focus:border-primary outline-none transition-all shadow-lg placeholder:text-slate-500"
                             />
                         </div>
@@ -281,9 +282,15 @@ export const Clientes = () => {
                                     {selectedClient.address}, {selectedClient.number} - {selectedClient.neighborhood}, {selectedClient.city}
                                 </div>
                                 {selectedClient.phone && (
-                                    <div className="flex items-center gap-2 text-emerald-400 text-sm mt-1 font-mono font-bold">
-                                        <span className="material-symbols-outlined text-sm">call</span>
-                                        {selectedClient.phone}
+                                    <div className="flex items-center gap-3 mt-1">
+                                        <div className="flex items-center gap-2 text-emerald-400 text-sm font-mono font-bold">
+                                            <span className="material-symbols-outlined text-sm">call</span>
+                                            {selectedClient.phone}
+                                        </div>
+                                        <WhatsAppButton
+                                            phoneString={selectedClient.phone}
+                                            className="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border border-emerald-500/20"
+                                        />
                                     </div>
                                 )}
                             </div>
@@ -427,41 +434,41 @@ export const Clientes = () => {
                                     <div>
                                         <label className="text-xs font-bold text-slate-400 block mb-1">Nome</label>
                                         <input className="w-full bg-[#080c14] border border-[#233348] rounded p-2 text-white"
-                                            value={editForm.name} onChange={e => setEditForm({ ...editForm, name: e.target.value })} />
+                                            value={editForm.name} onChange={e => setEditForm({ ...editForm, name: e.target.value })} aria-label="Nome do Cliente" />
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
                                             <label className="text-xs font-bold text-slate-400 block mb-1">Telefone</label>
                                             <input className="w-full bg-[#080c14] border border-[#233348] rounded p-2 text-white"
-                                                value={editForm.phone} onChange={e => setEditForm({ ...editForm, phone: e.target.value })} />
+                                                value={editForm.phone} onChange={e => setEditForm({ ...editForm, phone: e.target.value })} aria-label="Telefone" />
                                         </div>
                                         <div>
                                             <label className="text-xs font-bold text-slate-400 block mb-1">Segmento</label>
                                             <input className="w-full bg-[#080c14] border border-[#233348] rounded p-2 text-white"
-                                                value={editForm.segment} onChange={e => setEditForm({ ...editForm, segment: e.target.value })} />
+                                                value={editForm.segment} onChange={e => setEditForm({ ...editForm, segment: e.target.value })} aria-label="Segmento" />
                                         </div>
                                     </div>
                                     <div>
                                         <label className="text-xs font-bold text-slate-400 block mb-1">Endereço</label>
                                         <input className="w-full bg-[#080c14] border border-[#233348] rounded p-2 text-white"
-                                            value={editForm.address} onChange={e => setEditForm({ ...editForm, address: e.target.value })} />
+                                            value={editForm.address} onChange={e => setEditForm({ ...editForm, address: e.target.value })} aria-label="Endereço" />
                                     </div>
                                     <div className="grid grid-cols-3 gap-4">
                                         <div>
                                             <label className="text-xs font-bold text-slate-400 block mb-1">Número</label>
                                             <input className="w-full bg-[#080c14] border border-[#233348] rounded p-2 text-white"
-                                                value={editForm.number} onChange={e => setEditForm({ ...editForm, number: e.target.value })} />
+                                                value={editForm.number} onChange={e => setEditForm({ ...editForm, number: e.target.value })} aria-label="Número" />
                                         </div>
                                         <div className="col-span-2">
                                             <label className="text-xs font-bold text-slate-400 block mb-1">Cidade</label>
                                             <input className="w-full bg-[#080c14] border border-[#233348] rounded p-2 text-white"
-                                                value={editForm.city} onChange={e => setEditForm({ ...editForm, city: e.target.value })} />
+                                                value={editForm.city} onChange={e => setEditForm({ ...editForm, city: e.target.value })} aria-label="Cidade" />
                                         </div>
                                     </div>
                                     <div>
                                         <label className="text-xs font-bold text-slate-400 block mb-1">Bairro</label>
                                         <input className="w-full bg-[#080c14] border border-[#233348] rounded p-2 text-white"
-                                            value={editForm.neighborhood} onChange={e => setEditForm({ ...editForm, neighborhood: e.target.value })} />
+                                            value={editForm.neighborhood} onChange={e => setEditForm({ ...editForm, neighborhood: e.target.value })} aria-label="Bairro" />
                                     </div>
                                 </div>
                                 <div className="p-4 border-t border-[#233348] flex justify-end gap-3">
@@ -509,6 +516,7 @@ export const Clientes = () => {
                                         <input type="date" className="w-full bg-[#080c14] border border-[#233348] rounded p-2 text-white"
                                             value={newCollectionForm.date}
                                             onChange={e => setNewCollectionForm({ ...newCollectionForm, date: e.target.value })}
+                                            aria-label="Data da coleta"
                                         />
                                     </div>
                                     <div>

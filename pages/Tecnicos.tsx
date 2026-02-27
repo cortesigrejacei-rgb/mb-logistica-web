@@ -2,9 +2,10 @@ import React, { useState, useRef } from 'react';
 import { useData } from '../context/DataContext';
 import type { Technician } from '../context/DataContext';
 import { useNavigate } from 'react-router-dom';
+import * as XLSX from 'xlsx';
 
 export const Tecnicos = () => {
-  const { technicians, deleteTechnician, updateTechnician, collections, showToast } = useData();
+  const { technicians, deleteTechnician, updateTechnician, toggleTechnicianBlock, collections, showToast } = useData();
   const navigate = useNavigate();
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedTech, setSelectedTech] = useState<Technician | null>(null);
@@ -154,14 +155,14 @@ export const Tecnicos = () => {
   );
 
   const handleExport = () => {
-    if (!(window as any).XLSX) return alert("Biblioteca de exportação não carregada.");
+    if (!XLSX) return alert("Biblioteca de exportação não carregada.");
     const data = filteredTechnicians.map(t => ({
       ID: t.id, Nome: t.name, Email: t.email, Função: t.role, Status: t.status, Meta: t.monthly_goal
     }));
-    const ws = (window as any).XLSX.utils.json_to_sheet(data);
-    const wb = (window as any).XLSX.utils.book_new();
-    (window as any).XLSX.utils.book_append_sheet(wb, ws, "Técnicos");
-    (window as any).XLSX.writeFile(wb, `tecnicos_mb_${new Date().toISOString().split('T')[0]}.xlsx`);
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Técnicos");
+    XLSX.writeFile(wb, `tecnicos_mb_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
 
   const today = new Date().toISOString().split('T')[0];
@@ -209,12 +210,12 @@ export const Tecnicos = () => {
         <div className="bg-surface-dark rounded-t-2xl border border-border-dark border-b-0 p-4 flex flex-col md:flex-row gap-4 justify-between items-center">
           <div className="relative w-full md:w-96">
             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">search</span>
-            <input
-              className="block w-full pl-10 pr-3 py-3 bg-background-dark border border-border-dark rounded-xl text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-primary/20 sm:text-sm"
+            <input className="block w-full pl-10 pr-3 py-3 bg-background-dark border border-border-dark rounded-xl text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-primary/20 sm:text-sm"
               placeholder="Buscar técnico..."
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              aria-label="Buscar técnico..."
             />
           </div>
         </div>
@@ -240,7 +241,7 @@ export const Tecnicos = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-4">
                         <div className="h-12 w-12 rounded-full overflow-hidden border-2 border-border-dark shadow-lg">
-                          <img src={tech.avatar} alt="" className="w-full h-full object-cover" />
+                          <img src={tech.avatar} alt="Foto do perfil do técnico" className="w-full h-full object-cover" />
                         </div>
                         <div>
                           <div className="text-sm font-black text-white">{tech.name}</div>
@@ -249,9 +250,9 @@ export const Tecnicos = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center">
-                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${tech.status === 'Online' || tech.status === 'Em Rota' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-slate-500/10 text-slate-500 border-slate-500/20'}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${tech.status === 'Online' || tech.status === 'Em Rota' ? 'bg-emerald-500' : 'bg-slate-500'}`}></span>
-                        {tech.status}
+                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${tech.is_blocked ? 'bg-red-500/10 text-red-500 border-red-500/20' : tech.status === 'Online' || tech.status === 'Em Rota' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-slate-500/10 text-slate-500 border-slate-500/20'}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${tech.is_blocked ? 'bg-red-500' : tech.status === 'Online' || tech.status === 'Em Rota' ? 'bg-emerald-500' : 'bg-slate-500'}`}></span>
+                        {tech.is_blocked ? 'Bloqueado' : tech.status}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center">
@@ -306,13 +307,13 @@ export const Tecnicos = () => {
             <div className="p-6 border-b border-[#233348] flex justify-between items-start bg-[#1a232e]">
               <div className="flex items-center gap-4">
                 <div className="size-16 rounded-full overflow-hidden border-2 border-primary shadow-xl">
-                  <img src={selectedTech.avatar} className="w-full h-full object-cover" />
+                  <img src={selectedTech.avatar} className="w-full h-full object-cover" alt="Imagem" />
                 </div>
                 <div>
                   <h2 className="text-2xl font-bold text-white">{selectedTech.name}</h2>
                   <div className="flex items-center gap-2 mt-1">
-                    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest border ${selectedTech.status === 'Online' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-slate-500/10 text-slate-500 border-slate-500/20'}`}>
-                      {selectedTech.status}
+                    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest border ${selectedTech.is_blocked ? 'bg-red-500/10 text-red-500 border-red-500/20' : selectedTech.status === 'Online' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-slate-500/10 text-slate-500 border-slate-500/20'}`}>
+                      {selectedTech.is_blocked ? 'BLOQUEADO' : selectedTech.status}
                     </span>
                     <span className="text-xs text-slate-500">{selectedTech.email}</span>
                   </div>
@@ -330,7 +331,7 @@ export const Tecnicos = () => {
               <section>
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                    <span className="material-symbols-outlined text-purple-500">flag</span>
+                    <span className="material-symbols-outlined text-emerald-500">flag</span>
                     Desempenho & Metas
                   </h3>
                   {!editingGoal && (
@@ -344,17 +345,17 @@ export const Tecnicos = () => {
                   {/* Meta Mensal Card */}
                   <div className="bg-[#1a232e] p-5 rounded-2xl border border-[#233348] relative overflow-hidden group">
                     <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                      <span className="material-symbols-outlined text-6xl text-purple-500">target</span>
+                      <span className="material-symbols-outlined text-6xl text-emerald-500">target</span>
                     </div>
                     <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Meta Mensal</p>
 
                     {editingGoal ? (
                       <div className="flex items-center gap-2">
-                        <input
-                          type="number"
+                        <input type="number"
                           className="w-24 bg-[#080c14] border border-primary rounded-lg px-2 py-1 text-white font-mono font-bold outline-none"
                           value={newGoal}
                           onChange={e => setNewGoal(parseInt(e.target.value) || 0)}
+                          aria-label="Campo de formulário"
                           autoFocus
                         />
                         <button onClick={handleUpdateGoal} className="p-1.5 bg-primary rounded-lg text-white hover:bg-blue-600">
@@ -366,7 +367,7 @@ export const Tecnicos = () => {
                     )}
                     <div className="mt-2 w-full bg-[#080c14] h-1.5 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-purple-500 transition-all duration-1000"
+                        className="h-full bg-emerald-500 transition-all duration-1000"
                         style={{ width: `${Math.min(100, (stats.totalCollected / stats.goal) * 100)}%` }}
                       ></div>
                     </div>
@@ -468,11 +469,33 @@ export const Tecnicos = () => {
                 </div>
               </section>
 
-              <div className="pt-8 border-t border-[#233348] flex justify-end">
+              <div className="pt-8 border-t border-[#233348] flex justify-between gap-3">
+                <button
+                  onClick={async () => {
+                    const confirmMsg = selectedTech.is_blocked
+                      ? `Deseja desbloquear o acesso de ${selectedTech.name}?`
+                      : `Deseja BLOQUEAR o acesso de ${selectedTech.name}? O login será suspenso imediatamente.`;
+
+                    if (window.confirm(confirmMsg)) {
+                      await toggleTechnicianBlock(selectedTech.id, !selectedTech.is_blocked);
+                      setIsDetailModalOpen(false);
+                    }
+                  }}
+                  className={`px-4 py-3 font-bold rounded-xl transition-all flex items-center gap-2 border ${selectedTech.is_blocked
+                    ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500 hover:bg-emerald-500/20'
+                    : 'bg-red-500/10 border-red-500/20 text-red-500 hover:bg-red-500/20'
+                    }`}
+                >
+                  <span className="material-symbols-outlined text-sm">
+                    {selectedTech.is_blocked ? 'lock_open' : 'lock_person'}
+                  </span>
+                  {selectedTech.is_blocked ? 'Desbloquear Técnico' : 'Bloquear Técnico'}
+                </button>
+
                 <button onClick={() => {
                   navigate(`/tecnicos/editar/${encodeURIComponent(selectedTech.id)}`);
                 }} className="px-6 py-3 bg-[#233348] hover:bg-[#324867] text-white font-bold rounded-xl transition-colors flex items-center gap-2">
-                  <span className="material-symbols-outlined text-sm">edit</span> Editar Dados Cadastrais
+                  <span className="material-symbols-outlined text-sm">edit</span> Editar Perfil
                 </button>
               </div>
 

@@ -325,10 +325,10 @@ export const Combustivel = () => {
                             </span>
                             {calculating ? 'Sincronizando...' : 'Sincronizar Valores'}
                         </button>
-                        <input
-                            type="date"
+                        <input type="date"
                             value={selectedDate}
                             onChange={(e) => setSelectedDate(e.target.value)}
+                            aria-label="Selecionar data"
                             className="bg-surface-dark border border-border-dark text-white rounded-xl px-4 py-2 font-bold focus:outline-none focus:ring-2 focus:ring-primary/50"
                         />
                     </div>
@@ -517,22 +517,22 @@ export const Combustivel = () => {
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6 bg-background-dark p-4 rounded-xl border border-border-dark">
-                                <input placeholder="Nome do Posto" value={newStationName} onChange={e => setNewStationName(e.target.value)} className="bg-surface-dark border border-border-dark text-white rounded-lg px-3 py-2 text-sm md:col-span-2" />
-                                <input placeholder="Cidade" value={newStationCity} onChange={e => setNewStationCity(e.target.value)} className="bg-surface-dark border border-border-dark text-white rounded-lg px-3 py-2 text-sm md:col-span-2" />
-                                <input placeholder="UF" value={newStationState} onChange={e => setNewStationState(e.target.value)} className="bg-surface-dark border border-border-dark text-white rounded-lg px-3 py-2 text-sm md:col-span-1" maxLength={2} />
+                                <input placeholder="Nome do Posto" value={newStationName} onChange={e => setNewStationName(e.target.value)} aria-label="Nome do Posto" className="bg-surface-dark border border-border-dark text-white rounded-lg px-3 py-2 text-sm md:col-span-2" />
+                                <input placeholder="Cidade" value={newStationCity} onChange={e => setNewStationCity(e.target.value)} aria-label="Cidade" className="bg-surface-dark border border-border-dark text-white rounded-lg px-3 py-2 text-sm md:col-span-2" />
+                                <input placeholder="UF" value={newStationState} onChange={e => setNewStationState(e.target.value)} aria-label="UF" className="bg-surface-dark border border-border-dark text-white rounded-lg px-3 py-2 text-sm md:col-span-1" maxLength={2} />
 
                                 <div className="md:col-span-5 flex gap-2">
                                     <div className="flex-1">
                                         <label className="text-[10px] text-slate-500 font-bold uppercase mb-1 block">Gasolina</label>
-                                        <input type="number" step="0.01" value={newPriceGas} onChange={e => setNewPriceGas(parseFloat(e.target.value))} className="w-full bg-surface-dark border border-border-dark text-white rounded-lg px-3 py-2 text-sm" />
+                                        <input type="number" step="0.01" value={newPriceGas} onChange={e => setNewPriceGas(parseFloat(e.target.value))} aria-label="Preço Gasolina" className="w-full bg-surface-dark border border-border-dark text-white rounded-lg px-3 py-2 text-sm" />
                                     </div>
                                     <div className="flex-1">
                                         <label className="text-[10px] text-slate-500 font-bold uppercase mb-1 block">Etanol</label>
-                                        <input type="number" step="0.01" value={newPriceEth} onChange={e => setNewPriceEth(parseFloat(e.target.value))} className="w-full bg-surface-dark border border-border-dark text-white rounded-lg px-3 py-2 text-sm" />
+                                        <input type="number" step="0.01" value={newPriceEth} onChange={e => setNewPriceEth(parseFloat(e.target.value))} aria-label="Preço Etanol" className="w-full bg-surface-dark border border-border-dark text-white rounded-lg px-3 py-2 text-sm" />
                                     </div>
                                     <div className="flex-1">
                                         <label className="text-[10px] text-slate-500 font-bold uppercase mb-1 block">Diesel</label>
-                                        <input type="number" step="0.01" value={newPriceDie} onChange={e => setNewPriceDie(parseFloat(e.target.value))} className="w-full bg-surface-dark border border-border-dark text-white rounded-lg px-3 py-2 text-sm" />
+                                        <input type="number" step="0.01" value={newPriceDie} onChange={e => setNewPriceDie(parseFloat(e.target.value))} aria-label="Preço Diesel" className="w-full bg-surface-dark border border-border-dark text-white rounded-lg px-3 py-2 text-sm" />
                                     </div>
                                 </div>
                                 <button onClick={handleSaveStation} className="md:col-span-1 bg-primary text-white rounded-lg font-bold text-xs uppercase tracking-wider py-2 hover:bg-blue-600 transition-all h-full mt-auto flex items-center justify-center">

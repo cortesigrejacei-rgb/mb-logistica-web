@@ -128,6 +128,7 @@ export const Relatorios = () => {
                 className="h-10 rounded-lg bg-[#233348] px-4 text-white text-sm font-bold border-none focus:ring-1 focus:ring-primary outline-none cursor-pointer"
                 value={dateRange}
                 onChange={(e) => setDateRange(e.target.value as any)}
+                aria-label="Filtrar período"
               >
                 <option value="today">Hoje</option>
                 <option value="week">Esta Semana</option>
@@ -248,7 +249,7 @@ const ReportCard = ({ title, value, icon, color, trend, trendColor = 'text-slate
 const TechItem = ({ name, role, score, completed, avatar }: any) => (
   <div className="flex items-center gap-4 p-4 rounded-xl bg-[#0f172a] border border-slate-800 hover:border-slate-700 transition-colors">
     <div className="size-10 rounded-full bg-slate-700 overflow-hidden">
-      <img src={avatar} alt="" className="w-full h-full object-cover" />
+      <img src={avatar} alt="Avatar do técnico" className="w-full h-full object-cover" />
     </div>
     <div className="flex-1 min-w-0">
       <p className="text-white font-bold text-sm truncate">{name}</p>

@@ -1,19 +1,23 @@
 import React from 'react';
 import { useData } from '../context/DataContext';
+import * as XLSX from 'xlsx';
 
 export const Financeiro = () => {
   const { collections, technicians, settings } = useData();
+  const [techFilter, setTechFilter] = React.useState('');
 
   // Settings for calculation
   const RATE_PER_COLLECTION = settings.pricePerCollection || 35.00;
 
+  const filteredTechs = technicians.filter(t => t.name.toLowerCase().includes(techFilter.toLowerCase()));
+
   // Calculate Financial Data per Technician
-  const techFinancials = technicians.map(tech => {
+  const techFinancials = filteredTechs.map(tech => {
     const completed = collections.filter(c => c.driverId === tech.id && c.status === 'Coletado');
     const pending = collections.filter(c => c.driverId === tech.id && c.status === 'Pendente');
-    
+
     const totalToReceive = completed.length * RATE_PER_COLLECTION;
-    
+
     return {
       ...tech,
       completedCount: completed.length,
@@ -29,8 +33,8 @@ export const Financeiro = () => {
   const totalPendingPayouts = techFinancials.filter(t => t.totalToReceive > 0).length;
 
   const handleExport = () => {
-    if (!window.XLSX) return alert("Biblioteca de exportação não carregada.");
-    
+    if (!XLSX) return alert("Biblioteca de exportação não carregada.");
+
     const data = techFinancials.map(t => ({
       ID: t.id,
       Técnico: t.name,
@@ -41,10 +45,10 @@ export const Financeiro = () => {
       Status: t.totalToReceive > 0 ? "A Pagar" : "Em Dia"
     }));
 
-    const ws = window.XLSX.utils.json_to_sheet(data);
-    const wb = window.XLSX.utils.book_new();
-    window.XLSX.utils.book_append_sheet(wb, ws, "Folha de Pagamento");
-    window.XLSX.writeFile(wb, `financeiro_vupty_${new Date().toISOString().split('T')[0]}.xlsx`);
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Folha de Pagamento");
+    XLSX.writeFile(wb, `financeiro_vupty_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
 
   return (
@@ -64,7 +68,7 @@ export const Financeiro = () => {
             <p className="text-[#92a9c9] text-base font-normal">Controle de pagamentos baseado nas coletas realizadas.</p>
           </div>
           <div className="flex gap-3">
-            <button 
+            <button
               onClick={handleExport}
               className="flex items-center justify-center gap-2 rounded-lg h-10 px-4 border border-[#324867] bg-[#1e293b] text-white text-sm font-bold hover:bg-[#233348] transition-all"
             >
@@ -119,7 +123,7 @@ export const Financeiro = () => {
                 const roleTotal = techFinancials
                   .filter(t => t.role === role)
                   .reduce((acc, curr) => acc + curr.totalToReceive, 0);
-                
+
                 return (
                   <div key={role} className="flex flex-col gap-1">
                     <div className="flex justify-between text-sm">
@@ -127,8 +131,8 @@ export const Financeiro = () => {
                       <span className="text-white font-bold">R$ {roleTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                     </div>
                     <div className="w-full h-1.5 bg-[#111822] rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-primary rounded-full" 
+                      <div
+                        className="h-full bg-primary rounded-full"
                         style={{ width: `${totalPaid > 0 ? (roleTotal / totalPaid) * 100 : 0}%` }}
                       ></div>
                     </div>
@@ -141,15 +145,15 @@ export const Financeiro = () => {
           <div className="lg:col-span-2 flex flex-col rounded-xl border border-[#324867] bg-[#1e293b] overflow-hidden">
             <div className="flex flex-col sm:flex-row items-center justify-between p-4 gap-3 border-b border-[#324867]">
               <div className="flex items-center gap-2">
-                 <h3 className="text-white font-bold px-2">Detalhamento por Técnico</h3>
+                <h3 className="text-white font-bold px-2">Detalhamento por Técnico</h3>
               </div>
               <div className="relative w-full sm:w-64">
                 <span className="material-symbols-outlined absolute left-3 top-2.5 text-[#92a9c9] text-lg">search</span>
-                <input
-                  className="w-full h-10 pl-10 pr-4 rounded-lg bg-[#111822] border border-[#324867] text-white placeholder-[#92a9c9] focus:outline-none focus:border-primary text-sm"
+                <input className="w-full h-10 pl-10 pr-4 rounded-lg bg-[#111822] border border-[#324867] text-white placeholder-[#92a9c9] focus:outline-none focus:border-primary text-sm"
                   placeholder="Buscar técnico..."
                   type="text"
-                />
+                  onChange={e => setTechFilter(e.target.value)}
+                  aria-label="Buscar técnico..." />
               </div>
             </div>
             <div className="overflow-x-auto">
@@ -157,7 +161,7 @@ export const Financeiro = () => {
                 <thead className="bg-[#111822] border-b border-[#324867]">
                   <tr>
                     <th className="p-4 text-[#92a9c9] text-xs font-semibold uppercase w-10">
-                      <input className="rounded border-[#324867] bg-[#1e293b] text-primary focus:ring-0" type="checkbox" />
+                      <input className="rounded border-[#324867] bg-[#1e293b] text-primary focus:ring-0" type="checkbox" aria-label="Selecionar todos" />
                     </th>
                     <th className="p-4 text-[#92a9c9] text-xs font-semibold uppercase">Técnico</th>
                     <th className="p-4 text-[#92a9c9] text-xs font-semibold uppercase text-center">Coletas</th>
@@ -180,7 +184,7 @@ export const Financeiro = () => {
                     />
                   ))}
                   {techFinancials.length === 0 && (
-                     <tr>
+                    <tr>
                       <td colSpan={5} className="p-8 text-center text-slate-500">Nenhum dado financeiro disponível.</td>
                     </tr>
                   )}
@@ -218,13 +222,13 @@ const FinanceCard = ({ label, value, icon, trend, trendUp, trendColor }: any) =>
 const FinanceRow = ({ name, id, val, status, statusColor, dotColor, img, coletas }: any) => (
   <tr className="group hover:bg-[#233348]/40 transition-colors">
     <td className="p-4">
-      <input className="rounded border-[#324867] bg-[#1e293b] text-primary focus:ring-0 cursor-pointer" type="checkbox" />
+      <input className="rounded border-[#324867] bg-[#1e293b] text-primary focus:ring-0 cursor-pointer" type="checkbox" aria-label="Selecionar linha" />
     </td>
     <td className="p-4">
       <div className="flex items-center gap-3">
         <div className="h-9 w-9 rounded-full overflow-hidden bg-slate-700 ring-2 ring-transparent group-hover:ring-primary/50 transition-all">
-          <img 
-            src={img} 
+          <img
+            src={img}
             alt={name}
             className="w-full h-full object-cover"
             onError={(e) => {
@@ -239,7 +243,7 @@ const FinanceRow = ({ name, id, val, status, statusColor, dotColor, img, coletas
       </div>
     </td>
     <td className="p-4 text-center">
-       <span className="text-white font-mono bg-[#111822] px-2 py-1 rounded border border-[#324867]">{coletas}</span>
+      <span className="text-white font-mono bg-[#111822] px-2 py-1 rounded border border-[#324867]">{coletas}</span>
     </td>
     <td className="p-4 text-white text-sm font-bold text-right">{val}</td>
     <td className="p-4 text-center">

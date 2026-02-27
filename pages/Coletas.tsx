@@ -5,6 +5,7 @@ import type { Collection } from '../context/DataContext';
 import { smartDistribute, TechAssignment } from '../utils/distributionLogic';
 import { parseAddress, normalizeCity } from '../utils/addressParser';
 import { sendPushNotification } from '../utils/notificationUtils';
+import { WhatsAppButton } from '../components/WhatsAppButton';
 
 export const Coletas = () => {
   const {
@@ -288,7 +289,7 @@ export const Coletas = () => {
           <div className="flex flex-wrap justify-between gap-4 mb-8">
             <h1 className="text-white tracking-tighter text-4xl font-black uppercase">Fluxo de Coletas MB</h1>
             <div className="flex gap-3">
-              <button onClick={handleOpenAutoDispatch} className="flex items-center justify-center rounded-2xl h-12 px-6 bg-purple-600/10 hover:bg-purple-600/20 border border-purple-500/20 text-purple-400 text-sm font-black gap-2 transition-all uppercase tracking-widest">
+              <button onClick={handleOpenAutoDispatch} className="flex items-center justify-center rounded-2xl h-12 px-6 bg-emerald-600/10 hover:bg-emerald-600/20 border border-emerald-500/20 text-emerald-400 text-sm font-black gap-2 transition-all uppercase tracking-widest">
                 <span className="material-symbols-outlined text-[20px]">magic_button</span> Auto Distribuir
               </button>
               <button onClick={() => refreshData()} className="flex items-center justify-center rounded-2xl h-12 w-12 bg-surface-dark border border-border-dark text-slate-400 hover:text-white transition-all shadow-sm">
@@ -310,12 +311,12 @@ export const Coletas = () => {
           <div className="flex flex-wrap items-center gap-3 bg-surface-dark p-3 rounded-2xl border border-border-dark mb-6">
             <div className="flex-1 relative">
               <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-[22px]">search</span>
-              <input
-                className="w-full bg-transparent border-none text-white text-sm placeholder:text-slate-600 focus:ring-0 pl-11 py-2"
+              <input className="w-full bg-transparent border-none text-white text-sm placeholder:text-slate-600 focus:ring-0 pl-11 py-2"
                 placeholder="Filtrar ordens de serviço..."
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                aria-label="Filtrar ordens de serviço..."
               />
             </div>
           </div>
@@ -326,10 +327,10 @@ export const Coletas = () => {
             <thead className="sticky top-0 bg-background-dark z-10">
               <tr className="text-slate-500 text-[10px] font-black uppercase tracking-[2px] border-b border-border-dark">
                 <th className="py-4 pl-4 w-10">
-                  <input
-                    type="checkbox"
+                  <input type="checkbox"
                     className="rounded border-slate-600 bg-surface-dark text-primary focus:ring-primary/50"
                     checked={selectedIds.size === filteredCollections.length && filteredCollections.length > 0}
+                    aria-label="Selecionar todas as coletas"
                     onChange={toggleSelectAll}
                   />
                 </th>
@@ -338,6 +339,7 @@ export const Coletas = () => {
                 <th className="py-4">Endereço</th>
                 <th className="py-4">Status</th>
                 <th className="py-4">Responsável</th>
+                <th className="py-4 text-center">Ações</th>
               </tr>
             </thead>
             <tbody className="text-sm">
@@ -362,6 +364,7 @@ export const Coletas = () => {
                       e.stopPropagation();
                       toggleSelection(col.id);
                     }}
+                    phone={col.phone}
                   />
                 );
               })}
@@ -451,6 +454,12 @@ export const Coletas = () => {
                     {selectedCollection.complement}
                   </p>
                 )}
+                {selectedCollection.phone && (
+                  <WhatsAppButton
+                    phoneString={selectedCollection.phone}
+                    className="mt-2 w-fit bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest border border-emerald-500/20"
+                  />
+                )}
               </div>
             </section>
 
@@ -478,7 +487,7 @@ export const Coletas = () => {
               {getTechnicianById(selectedCollection.driverId) ? (
                 <div className="flex items-center gap-4 bg-background-dark p-4 rounded-2xl border border-border-dark">
                   <div className="size-12 rounded-full overflow-hidden border-2 border-primary shadow-lg">
-                    <img src={getTechnicianById(selectedCollection.driverId)?.avatar} className="w-full h-full object-cover" />
+                    <img src={getTechnicianById(selectedCollection.driverId)?.avatar} className="w-full h-full object-cover" alt="Imagem" />
                   </div>
                   <div>
                     <p className="text-white text-sm font-black">{getTechnicianById(selectedCollection.driverId)?.name}</p>
@@ -515,17 +524,17 @@ export const Coletas = () => {
                   <span className="material-symbols-outlined">add_a_photo</span>
                   {proofFile ? 'Foto Selecionada' : 'Capturar Evidência'}
                 </button>
-                <input type="file" ref={fileInputRef} accept="image/*" className="hidden" onChange={handleFileSelect} />
+                <input type="file" ref={fileInputRef} accept="image/*" className="hidden" onChange={handleFileSelect} aria-label="Campo de formulário" />
               </div>
 
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Hotlink: URL do Comprovante</label>
-                <input
-                  type="url"
+                <input type="url"
                   placeholder="https://exemplo.com/comprovante.png"
                   className="w-full bg-background-dark border border-border-dark text-white rounded-2xl p-4 text-xs font-medium focus:ring-2 focus:ring-primary/20 outline-none"
                   value={proofUrlInput}
-                  onChange={e => {
+                  onChange={(e) => {
+                    const value = e.target.value;
                     setProofUrlInput(e.target.value);
                     if (e.target.value) setProofFile(null);
                   }}
@@ -534,13 +543,13 @@ export const Coletas = () => {
 
               <div className="bg-background-dark p-6 rounded-[32px] border border-border-dark space-y-4">
                 <label className="flex items-center gap-3 cursor-pointer">
-                  <input type="checkbox" checked={addToStock} onChange={e => setAddToStock(e.target.checked)} className="rounded bg-surface-dark text-primary border-border-dark" />
+                  <input type="checkbox" checked={addToStock} onChange={e => setAddToStock(e.target.checked)} aria-label="Adicionar ao estoque" className="rounded bg-surface-dark text-primary border-border-dark" />
                   <span className="text-xs font-black text-white uppercase tracking-widest">Retornar ao Estoque</span>
                 </label>
                 {addToStock && (
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">S/N do Equipamento</label>
-                    <input type="text" placeholder="EX: ALCLB123" className="w-full bg-surface-dark border border-border-dark text-white rounded-xl p-3 text-xs font-mono uppercase focus:ring-1 focus:ring-primary outline-none" value={collectedSerial} onChange={e => setCollectedSerial(e.target.value)} />
+                    <input type="text" placeholder="EX: ALCLB123" className="w-full bg-surface-dark border border-border-dark text-white rounded-xl p-3 text-xs font-mono uppercase focus:ring-1 focus:ring-primary outline-none" value={collectedSerial} onChange={e => setCollectedSerial(e.target.value)} aria-label="Número de Série" />
                   </div>
                 )}
               </div>
@@ -564,26 +573,26 @@ export const Coletas = () => {
             <form onSubmit={handleCreate} className="space-y-5">
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Nome do Cliente</label>
-                <input type="text" required className="w-full bg-background-dark border border-border-dark text-white rounded-2xl p-4 text-sm font-bold focus:ring-2 focus:ring-primary/20 outline-none" value={newClient} onChange={e => setNewClient(e.target.value)} />
+                <input type="text" required className="w-full bg-background-dark border border-border-dark text-white rounded-2xl p-4 text-sm font-bold focus:ring-2 focus:ring-primary/20 outline-none" value={newClient} onChange={e => setNewClient(e.target.value)} aria-label="Nome do Cliente" />
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Endereço Completo</label>
-                <input type="text" required className="w-full bg-background-dark border border-border-dark text-white rounded-2xl p-4 text-sm font-bold focus:ring-2 focus:ring-primary/20 outline-none" value={newAddress} onChange={e => setNewAddress(e.target.value)} />
+                <input type="text" required className="w-full bg-background-dark border border-border-dark text-white rounded-2xl p-4 text-sm font-bold focus:ring-2 focus:ring-primary/20 outline-none" value={newAddress} onChange={e => setNewAddress(e.target.value)} aria-label="Endereço" />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Complemento</label>
-                  <input type="text" className="w-full bg-background-dark border border-border-dark text-white rounded-2xl p-4 text-sm font-bold focus:ring-2 focus:ring-primary/20 outline-none" value={newComplement} onChange={e => setNewComplement(e.target.value)} placeholder="Apto, Bloco, etc" />
+                  <input type="text" className="w-full bg-background-dark border border-border-dark text-white rounded-2xl p-4 text-sm font-bold focus:ring-2 focus:ring-primary/20 outline-none" value={newComplement} onChange={e => setNewComplement(e.target.value)} aria-label="Complemento" placeholder="Apto, Bloco, etc" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Cód. Modem (Conf.)</label>
-                  <input type="text" className="w-full bg-background-dark border border-border-dark text-white rounded-2xl p-4 text-sm font-bold focus:ring-2 focus:ring-primary/20 outline-none" value={newEquipmentCode} onChange={e => setNewEquipmentCode(e.target.value)} placeholder="Ex: S/N..." />
+                  <input type="text" className="w-full bg-background-dark border border-border-dark text-white rounded-2xl p-4 text-sm font-bold focus:ring-2 focus:ring-primary/20 outline-none" value={newEquipmentCode} onChange={e => setNewEquipmentCode(e.target.value)} aria-label="Código do Equipamento" placeholder="Ex: S/N..." />
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Contato</label>
-                  <input type="text" required maxLength={15} className="w-full bg-background-dark border border-border-dark text-white rounded-2xl p-4 text-sm font-bold focus:ring-2 focus:ring-primary/20 outline-none" value={newPhone} onChange={e => setNewPhone(formatPhone(e.target.value))} />
+                  <input type="text" required maxLength={15} className="w-full bg-background-dark border border-border-dark text-white rounded-2xl p-4 text-sm font-bold focus:ring-2 focus:ring-primary/20 outline-none" value={newPhone} onChange={e => setNewPhone(formatPhone(e.target.value))} aria-label="Telefone" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Técnico Designado</label>
@@ -644,7 +653,7 @@ export const Coletas = () => {
 
             <div className="flex gap-4">
               <button onClick={() => setIsDispatchConfigOpen(false)} className="flex-1 py-4 rounded-2xl bg-border-dark text-white font-bold text-sm">Cancelar</button>
-              <button onClick={executeAutoDispatch} className="flex-1 py-4 rounded-2xl bg-purple-600 hover:bg-purple-500 text-white font-black text-sm uppercase tracking-widest shadow-xl shadow-purple-600/20">
+              <button onClick={executeAutoDispatch} className="flex-1 py-4 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm uppercase tracking-widest shadow-xl shadow-emerald-600/20">
                 Confirmar e Distribuir
               </button>
             </div>
@@ -665,14 +674,13 @@ const MiniStat = ({ title, value, change, color }: any) => (
   </div>
 );
 
-const ColetaRow = ({ onClick, active, client, id, address, status, statusColor, driver, initials, initialsColor, sequenceOrder, selected, onSelect }: any) => (
+const ColetaRow = ({ onClick, active, client, id, address, status, statusColor, driver, initials, initialsColor, sequenceOrder, selected, onSelect, phone }: any) => (
   <tr
     onClick={onClick}
     className={`group border-b border-border-dark cursor-pointer transition-all relative ${active ? 'bg-primary/10' : 'hover:bg-white/5'} ${selected ? 'bg-blue-500/5' : ''}`}
   >
     <td className="py-5 pl-4 w-10">
-      <input
-        type="checkbox"
+      <input type="checkbox"
         checked={selected || false}
         onChange={onSelect}
         onClick={(e) => e.stopPropagation()}
@@ -708,6 +716,18 @@ const ColetaRow = ({ onClick, active, client, id, address, status, statusColor, 
     </td>
     <td className="py-5 text-slate-400 text-xs font-bold uppercase tracking-wider">
       {driver}
+    </td>
+    <td className="py-5 text-center">
+      <div className="flex items-center justify-center gap-2">
+        {phone && (
+          <WhatsAppButton
+            phoneString={phone}
+            showIcon={true}
+            label=""
+            className="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 p-2 rounded-lg border border-emerald-500/20"
+          />
+        )}
+      </div>
     </td>
   </tr>
 );

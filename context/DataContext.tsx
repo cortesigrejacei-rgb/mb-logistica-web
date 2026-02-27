@@ -25,6 +25,7 @@ export interface Technician {
   battery_level?: number;
   zone?: string;
   expo_push_token?: string; // For push notifications
+  is_blocked?: boolean;
   // Fuel & Optimization bits
   address?: string;
   start_lat?: number;
@@ -109,6 +110,15 @@ interface ToastMessage {
   id: number;
 }
 
+export interface DashboardStats {
+  totalTechs: number;
+  onlineTechs: number;
+  collectionsToday: number;
+  pendingCollections: number;
+  stockCount: number;
+  stockCritical: boolean;
+}
+
 interface DataContextType {
   technicians: Technician[];
   collections: Collection[];
@@ -136,8 +146,11 @@ interface DataContextType {
   optimizeRouteForTechnician: (techId: string, date: string) => Promise<void>;
   deleteCollections: (ids: string[]) => Promise<void>;
   unassignCollections: (ids: string[]) => Promise<void>;
-  fixGeocodes: () => Promise<void>;
+  toggleTechnicianBlock: (id: string, block: boolean) => Promise<void>;
+  fixGeocodes: (technicianId?: string) => Promise<void>;
   updateCollection: (id: string, data: Partial<Collection>) => Promise<void>;
+  dashboardStats: DashboardStats | null;
+  fetchDashboardStats: () => Promise<void>;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -165,6 +178,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [settings, setSettings] = useState<AppSettings>(initialSettings);
   const [loading, setLoading] = useState(true);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
 
   const currentTechnician = technicians.find(t => t.email === user?.email);
 
@@ -261,12 +275,28 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // We don't throw for settingsError because single() fails if empty, which is fine
       if (sets) setSettings({ ...initialSettings, ...sets });
 
+      await fetchDashboardStats();
+
     } catch (err) {
       console.error("[DataContext] Error fetching data:", err);
     } finally {
       clearTimeout(timeout);
       setLoading(false);
       console.log("[DataContext] fetchData completed.");
+    }
+  };
+
+  const fetchDashboardStats = async () => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const { data, error } = await supabase.rpc('get_daily_dash_stats', { query_date: today });
+      if (error) {
+        console.error("[DataContext] Error fetching dash stats:", error);
+        return;
+      }
+      setDashboardStats(data as DashboardStats);
+    } catch (err) {
+      console.error("[DataContext] Exception fetching dash stats:", err);
     }
   };
 
@@ -282,7 +312,18 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           fetchData(); // For INSERT or DELETE, do a full fetch to be safe
         }
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'collections' }, () => fetchData())
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'collections' }, (payload) => {
+        setCollections(prev => prev.map(c => c.id === payload.new.id ? { ...c, ...payload.new } : c));
+        fetchDashboardStats(); // Refresh stats when a collection changes
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'collections' }, (payload) => {
+        setCollections(prev => [mapCollectionFromDB(payload.new), ...prev]);
+        fetchDashboardStats(); // Refresh stats when a new collection is added
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'collections' }, (payload) => {
+        setCollections(prev => prev.filter(c => c.id !== payload.old.id));
+        fetchDashboardStats(); // Refresh stats when a collection is deleted
+      })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'time_entries' }, () => fetchData())
       .subscribe();
 
@@ -313,8 +354,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // Since we don't have direct access to env here easily, we'll pluck them from the imports if possible,
       // or hardcode the public ones found in lib/supabaseClient.ts (not ideal but works for this scope)
 
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      const supabaseUrl = (import.meta as any).env.VITE_SUPABASE_URL;
+      const supabaseKey = (import.meta as any).env.VITE_SUPABASE_ANON_KEY;
 
       const tempClient = createClient(supabaseUrl, supabaseKey, {
         auth: {
@@ -443,9 +484,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const addCollection = async (colData: Omit<Collection, 'id' | 'status'> & { id?: string; date?: string }, skipRefresh?: boolean) => {
+  const addCollection = async (colData: Omit<Collection, 'id' | 'status'> & { id?: string; date?: string; state?: string }, skipRefresh?: boolean) => {
     // Try Real Geocoding first (Nominatim)
-    let realCoords = await geocodeAddress(colData.address, colData.city, undefined); // State inferred
+    let realCoords = await geocodeAddress(colData.address, colData.city, colData.state, colData.neighborhood, colData.complement, colData.notes); // Notes passed!
 
     // Fallback to Simulation if Real fails
     if (!realCoords) {
@@ -458,7 +499,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const newCol = {
       client: colData.client,
-      address: colData.address,
+      address: realCoords.extractedAddress || colData.address,
       phone: colData.phone,
       driver_id: colData.driverId || null,
       notes: colData.notes,
@@ -466,6 +507,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       equipment_code: colData.equipment_code,
       city: colData.city,
       neighborhood: colData.neighborhood,
+      state: realCoords.extractedState || colData.state,
       lat: realCoords.lat,
       lng: realCoords.lng,
       id: finalId,
@@ -577,6 +619,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           .from('collections')
           .update(updateData)
           .eq('id', id)
+          // @ts-ignore - Supabase types can be tricky with argument counts
           .select('*', { count: 'exact' });
 
         console.log(`[updateCollection] ID: ${id} | Payload:`, JSON.stringify(updateData));
@@ -711,6 +754,25 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     fetchData();
   };
 
+  const toggleTechnicianBlock = async (id: string, block: boolean) => {
+    try {
+      console.log(`[ToggleBlock] ${block ? 'Blocking' : 'Unblocking'} technician ${id}...`);
+      const { data, error } = await supabase.rpc('toggle_technician_lock', {
+        target_id: id,
+        block_status: block
+      });
+
+      if (error) throw error;
+      if (data && data.success === false) throw new Error(data.message);
+
+      showToast(block ? 'Técnico bloqueado e login suspenso.' : 'Técnico desbloqueado com sucesso.', 'success');
+      fetchData();
+    } catch (e) {
+      console.error("Toggle block error:", e);
+      showToast('Erro ao alterar status do técnico.', 'error');
+    }
+  };
+
   const deleteStockItem = async (id: string) => {
     await supabase.from('stock_items').delete().eq('id', id);
     showToast('Item removido do estoque.', 'error');
@@ -835,22 +897,50 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const fixGeocodes = async () => {
-    const pendingCols = collections;
-    showToast(`Iniciando correção de GPS para ${pendingCols.length} coletas...`, 'info');
+  const fixGeocodes = async (technicianId?: string) => {
+    // Only fix Pending or En Route collections to save API quota and focus on active operations
+    let activeCols = collections.filter(c => c.status === 'Pendente' || c.status === 'Em Rota');
+
+    if (technicianId) {
+      activeCols = activeCols.filter(c => c.driverId === technicianId);
+    }
+
+    if (activeCols.length === 0) {
+      showToast(technicianId ? "Este técnico não possui coletas pendentes ou em rota." : "Nenhuma coleta pendente ou em rota para corrigir.", 'info');
+      return;
+    }
+
+    showToast(`Iniciando correção de GPS para ${activeCols.length} coletas${technicianId ? ' deste técnico' : ''}...`, 'info');
     let count = 0;
-    for (const col of pendingCols) {
+
+    for (const col of activeCols) {
+      // Nominatim requires 1 second between requests
       await new Promise(r => setTimeout(r, 1200));
-      const realCoords = await geocodeAddress(col.address, col.city);
+
+      const currentProgress = Math.round(((count) / activeCols.length) * 100);
+      showToast(`Corrigindo ${count + 1}/${activeCols.length} (${currentProgress}%)...`, 'info');
+
+      console.log(`[FixGPS] Correcting: ${col.client} | ${col.address}, ${col.city} - ${col.state || '?'}`);
+
+      const realCoords = await geocodeAddress(col.address, col.city, col.state, col.neighborhood, col.complement, col.notes);
+
       if (realCoords) {
-        await supabase.from('collections').update({
+        const { error } = await supabase.from('collections').update({
           lat: realCoords.lat,
-          lng: realCoords.lng
+          lng: realCoords.lng,
+          state: realCoords.extractedState || col.state,
+          address: realCoords.extractedAddress || col.address
         }).eq('id', col.id);
-        count++;
+
+        if (!error) {
+          count++;
+        } else {
+          console.error(`[FixGPS] Error updating ${col.id}:`, error);
+        }
       }
     }
-    showToast(`Correção de GPS finalizada! ${count} atualizados.`, 'success');
+
+    showToast(`Correção de GPS finalizada! ${count} de ${activeCols.length} endereços atualizados com precisão.`, 'success');
     fetchData();
   };
 
@@ -881,8 +971,11 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     optimizeRouteForTechnician,
     deleteCollections,
     unassignCollections,
+    toggleTechnicianBlock,
     fixGeocodes,
-    updateCollection
+    updateCollection,
+    dashboardStats,
+    fetchDashboardStats
   };
 
   return (

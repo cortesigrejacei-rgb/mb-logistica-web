@@ -73,12 +73,12 @@ export const Estoque = () => {
           <div className="flex items-center gap-3">
             <div className="relative">
               <span className="material-symbols-outlined absolute left-3 top-2.5 text-slate-500">search</span>
-              <input
-                type="text"
+              <input type="text"
                 placeholder="Buscar Serial/Modelo..."
                 className="bg-[#111822] border border-[#233348] text-white pl-10 pr-4 py-2 rounded-lg focus:ring-1 focus:ring-primary focus:border-primary w-64"
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
+                aria-label="Buscar Serial ou Modelo..."
               />
             </div>
             <button
@@ -210,13 +210,13 @@ export const Estoque = () => {
               </div>
               <div>
                 <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Serial Number (S/N)</label>
-                <input
-                  type="text"
+                <input type="text"
                   required
                   placeholder="Ex: ALCL..."
                   className="w-full mt-1 bg-[#111822] border border-[#233348] text-white rounded-lg p-2.5 focus:ring-primary focus:border-primary"
                   value={newSerial}
                   onChange={e => setNewSerial(e.target.value)}
+                  aria-label="Selecionar arquivo"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">

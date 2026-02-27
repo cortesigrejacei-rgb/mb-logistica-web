@@ -69,12 +69,12 @@ export const MobileHome = () => {
       <div className="px-6 py-2 space-y-5">
         <div className="relative">
           <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-[20px]">search</span>
-          <input
-            type="text"
+          <input type="text"
             placeholder="Buscar por cliente, OS ou endereço"
             className="w-full bg-[#1e293b] text-sm text-white placeholder:text-slate-500 rounded-2xl py-4 pl-12 pr-12 border border-[#233348] focus:outline-none focus:border-primary/50"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            aria-label="Buscar por cliente, OS ou endereço"
           />
           <button className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">
             <span className="material-symbols-outlined text-[20px]">tune</span>
@@ -115,7 +115,7 @@ export const MobileHome = () => {
                   <div className="flex items-center gap-4">
                     {index === 0 ? (
                       <div className="size-12 rounded-full overflow-hidden border-2 border-slate-700 shadow-lg">
-                        <img src={`https://ui-avatars.com/api/?name=${task.client}&background=random&color=fff`} alt="" className="w-full h-full object-cover" />
+                        <img src={`https://ui-avatars.com/api/?name=${task.client}&background=random&color=fff`} alt={`Avatar de ${task.client}`} className="w-full h-full object-cover" />
                       </div>
                     ) : (
                       <div className="size-12 rounded-full bg-[#233348] flex items-center justify-center text-primary font-black text-sm border border-primary/20">

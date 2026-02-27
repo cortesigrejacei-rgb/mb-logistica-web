@@ -108,7 +108,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
           <div className="p-4 border-t border-white/5 flex flex-col gap-2">
             <div className="flex items-center gap-3 px-3 py-2 bg-white/5 rounded-xl mb-2">
               <div className="size-8 rounded-full overflow-hidden border border-white/10">
-                <img src={userAvatar} className="w-full h-full object-cover" />
+                <img src={userAvatar} className="w-full h-full object-cover"  alt="Imagem" />
               </div>
               <div className="flex flex-col overflow-hidden">
                 <span className="text-[10px] font-black text-white truncate">{userName}</span>

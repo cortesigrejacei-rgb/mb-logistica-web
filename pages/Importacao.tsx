@@ -4,8 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import { calculateOptimalRoute } from '../lib/RouteOptimizer';
 import { supabase } from '../lib/supabaseClient';
-// Import types if available, otherwise reliance on window or direct import if bundler supports it
-// Note: In Vite/React, we usually need 'npm install xlsx'. Assuming standard import works or falling back to window if script tag used.
+import { extractPhones } from '../utils/phoneUtils';
 
 export const Importacao = () => {
   const { addCollection, technicians, optimizeRouteForTechnician, refreshData } = useData();
@@ -132,9 +131,9 @@ export const Importacao = () => {
 
           const city = getValue(['Cidade', 'Município']);
           const neighborhood = getValue(['Destinatário - Bairro', 'Bairro', 'Vila']);
-          const rawState = getValue(['Estado', 'UF', 'Est.', 'Node']); // Sometimes 'Node' or just column near city
-          // Simple validation for state (2 chars)
-          const state = rawState && rawState.length <= 3 ? rawState : '';
+          const rawState = getValue(['Estado', 'UF', 'Est.', 'Node']);
+          // Strict validation: must be exactly 2 characters and likely uppercase
+          const state = (rawState && String(rawState).trim().length === 2) ? String(rawState).trim().toUpperCase() : '';
 
           const segment = getValue(['Segmento', 'Pacote']);
 
@@ -150,9 +149,9 @@ export const Importacao = () => {
           return {
             id: String(id),
             client,
-            address: String(address),
+            address: `${String(address)}, ${String(number)}`.replace(/, null|, undefined|, -/g, ''),
             number: String(number),
-            phone: String(phone),
+            phone: extractPhones(String(phone)).join(' / '),
             notes: notes,
             date: formatDate(dateRaw),
             complement: String(complement),
@@ -233,7 +232,8 @@ export const Importacao = () => {
           complement: item.complement,
           equipment_code: item.equipmentCode,
           city: item.city,
-          neighborhood: item.neighborhood
+          neighborhood: item.neighborhood,
+          state: item.state
         }, true); // skipRefresh = true
       }
 
@@ -375,13 +375,12 @@ export const Importacao = () => {
                     onClick={() => fileInputRef.current?.click()}
                     className="bg-[#1a232e] rounded-lg border-2 border-dashed border-[#324867] hover:border-primary/50 transition-colors group cursor-pointer relative overflow-hidden h-64 flex flex-col items-center justify-center"
                   >
-                    <input
-                      ref={fileInputRef}
+                    <input ref={fileInputRef}
                       className="hidden"
                       type="file"
                       accept=".csv, .xlsx, .xls"
                       onChange={handleFileChange}
-                    />
+                      aria-label="Campo de formulário" />
                     <div className="mb-4 p-4 bg-[#233348] rounded-full group-hover:bg-primary/10 group-hover:text-primary transition-all text-[#92a9c9]">
                       <span className="material-symbols-outlined text-4xl">cloud_upload</span>
                     </div>

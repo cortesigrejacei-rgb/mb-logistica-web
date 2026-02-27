@@ -141,10 +141,10 @@ export const Notificacoes = () => {
 
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Título</label>
-                                    <input
-                                        type="text"
+                                    <input type="text"
                                         value={title}
                                         onChange={(e) => setTitle(e.target.value)}
+                                        aria-label="Título da notificação"
                                         placeholder="Ex: Aviso Importante"
                                         className="w-full bg-background-dark border border-border-dark text-white rounded-xl p-3 text-sm font-bold focus:ring-2 focus:ring-primary/20 outline-none"
                                     />

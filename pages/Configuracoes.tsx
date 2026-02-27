@@ -169,11 +169,11 @@ export const Configuracoes = () => {
 const InputGroup = ({ label, value, type = 'text', onChange }: any) => (
   <div className="flex flex-col gap-2">
     <label className="text-sm font-medium text-text-secondary">{label}</label>
-    <input
-      className="bg-[#111822] border border-[#324867] text-white text-sm rounded-lg focus:ring-primary focus:border-primary block w-full p-2.5"
+    <input className="bg-[#111822] border border-[#324867] text-white text-sm rounded-lg focus:ring-primary focus:border-primary block w-full p-2.5"
       type={type}
       value={value}
       onChange={(e) => onChange(e.target.value)}
+      aria-label="Configuração"
     />
   </div>
 );
@@ -200,11 +200,11 @@ const Toggle = ({ label, sub, checked, onChange }: any) => (
       <span className="text-xs text-text-secondary">{sub}</span>
     </div>
     <div className="relative inline-flex items-center cursor-pointer">
-      <input
-        type="checkbox"
+      <input type="checkbox"
         className="sr-only peer"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
+        aria-label="Habilitar/Desabilitar"
       />
       <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
     </div>
@@ -350,12 +350,12 @@ const AdminAccountSettings = ({ technicians, showToast }: { technicians: any[], 
             Nome de Exibição
           </label>
           <div className="flex gap-2">
-            <input
-              type="text"
+            <input type="text"
               placeholder="Novo nome (ex: Admin Master)"
               className="bg-[#1a2332] border border-[#324867] text-white text-sm rounded-lg focus:ring-primary focus:border-primary block w-full p-2.5 placeholder-gray-500"
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
+              aria-label="Novo nome"
             />
             <button
               onClick={handleUpdateName}
@@ -374,19 +374,19 @@ const AdminAccountSettings = ({ technicians, showToast }: { technicians: any[], 
             Alterar Senha
           </label>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input
-              type="password"
+            <input type="password"
               placeholder="Nova Senha"
               className="bg-[#1a2332] border border-[#324867] text-white text-sm rounded-lg focus:ring-primary focus:border-primary block w-full p-2.5 placeholder-gray-500"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
+              aria-label="Nova Senha"
             />
-            <input
-              type="password"
+            <input type="password"
               placeholder="Confirmar Nova Senha"
               className="bg-[#1a2332] border border-[#324867] text-white text-sm rounded-lg focus:ring-primary focus:border-primary block w-full p-2.5 placeholder-gray-500"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
+              aria-label="Confirmar Nova Senha"
             />
           </div>
           <div className="mt-3 flex justify-end">
@@ -423,12 +423,12 @@ const AdminAccountSettings = ({ technicians, showToast }: { technicians: any[], 
                 <span className="font-bold">Atenção:</span> Ao alterar seu email, você precisará usar o novo endereço no próximo login.
               </p>
               <div className="flex gap-2">
-                <input
-                  type="email"
+                <input type="email"
                   placeholder="Novo endereço de email"
                   className="bg-[#1a2332] border border-[#324867] text-white text-sm rounded-lg focus:ring-primary focus:border-primary block w-full p-2.5 placeholder-gray-500 flex-1"
                   value={newEmail}
                   onChange={(e) => setNewEmail(e.target.value)}
+                  aria-label="Novo endereço de email"
                 />
                 <button
                   onClick={handleUpdateEmail}

@@ -7,7 +7,7 @@ import * as L from 'leaflet';
 
 export const Dashboard = () => {
   const { user } = useAuth();
-  const { technicians, collections, stockItems } = useData();
+  const { technicians, collections, stockItems, dashboardStats } = useData();
   const navigate = useNavigate();
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<L.Map | null>(null);
@@ -52,7 +52,7 @@ export const Dashboard = () => {
           const lng = t.lng || -49.2719;
 
           // Unique color per tech for routes
-          const techColor = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'][index % 5];
+          const techColor = ['#3b82f6', '#10b981', '#f59e0b', '#06b6d4', '#ec4899'][index % 5];
 
           // Tech Marker
           const customIcon = L.divIcon({
@@ -61,7 +61,7 @@ export const Dashboard = () => {
                       <div class="relative flex items-center justify-center">
                         <div class="absolute w-8 h-8 bg-${t.status === 'Em Rota' ? 'green' : 'blue'}-500/20 rounded-full animate-ping"></div>
                         <div class="relative w-6 h-6 rounded-full border-2 border-white shadow-lg overflow-hidden">
-                            <img src="${t.avatar}" class="w-full h-full object-cover" />
+                            <img src="${t.avatar}" class="w-full h-full object-cover"  alt="Imagem" />
                         </div>
                         <div class="absolute -bottom-1 -right-1 w-3 h-3 bg-${t.status === 'Online' ? 'emerald' : 'amber'}-500 rounded-full border border-white"></div>
                       </div>
@@ -154,14 +154,14 @@ export const Dashboard = () => {
     };
   }, [technicians, collections]);
 
-  // Calculations for Real Data
-  const onlineTechs = technicians.filter(t => t.status === 'Online' || t.status === 'Em Rota').length;
-  const totalTechs = technicians.length;
-  const today = new Date().toISOString().split('T')[0];
-  const collectionsToday = collections.filter(c => c.date === today).length;
-  const pendingCollections = collections.filter(c => c.status === 'Pendente').length;
-  const stockCount = stockItems.length;
-  const stockCritical = stockItems.filter(i => i.status === 'Novo').length < 5;
+  // Calculations for Real Data from RPC
+  const onlineTechs = dashboardStats?.onlineTechs ?? 0;
+  const totalTechs = dashboardStats?.totalTechs ?? 0;
+  const collectionsToday = dashboardStats?.collectionsToday ?? 0;
+  const pendingCollections = dashboardStats?.pendingCollections ?? 0;
+  const stockCount = dashboardStats?.stockCount ?? 0;
+  const stockCritical = dashboardStats?.stockCritical ?? false;
+
   const firstName = String(user?.user_metadata?.name || user?.email || 'Usuário').split(' ')[0].split('@')[0];
 
   return (
@@ -185,7 +185,7 @@ export const Dashboard = () => {
           <KpiCard title="TÉCNICOS ONLINE" value={`${onlineTechs} / ${totalTechs}`} icon="badge" color="text-primary" bg="bg-primary/10" footer="Equipe em Curitiba" footerColor="text-[#0bda5e]" onClick={() => navigate('/mapa')} />
           <KpiCard title="COLETAS HOJE" value={collectionsToday.toString()} icon="check_circle" color="text-green-500" bg="bg-green-500/10" footer={`${pendingCollections} pendentes`} footerColor="text-orange-400" onClick={() => navigate('/coletas')} />
           <KpiCard title="ESTOQUE TOTAL" value={stockCount.toString()} icon="router" color="text-orange-500" bg="bg-orange-500/10" footer={stockCritical ? "Estoque Baixo!" : "Operacional"} footerColor={stockCritical ? "text-red-500" : "text-[#0bda5e]"} onClick={() => navigate('/estoque')} />
-          <KpiCard title="PENDÊNCIAS" value={pendingCollections.toString()} icon="pending_actions" color="text-purple-500" bg="bg-purple-500/10" footer="Aguardando ação" footerColor="text-text-secondary" onClick={() => navigate('/coletas')} />
+          <KpiCard title="PENDÊNCIAS" value={pendingCollections.toString()} icon="pending_actions" color="text-emerald-500" bg="bg-emerald-500/10" footer="Aguardando ação" footerColor="text-text-secondary" onClick={() => navigate('/coletas')} />
         </section>
 
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -203,21 +203,38 @@ export const Dashboard = () => {
           <div className="flex flex-col gap-6">
             <div className="flex flex-col rounded-xl bg-surface-light dark:bg-surface-dark border border-border-dark shadow-sm flex-1">
               <div className="p-4 border-b border-border-dark flex justify-between items-center">
-                <h3 className="text-lg font-bold text-[#111418] dark:text-white">Alertas Operacionais</h3>
+                <h3 className="text-lg font-bold text-[#111418] dark:text-white">Ocorrências & Alertas</h3>
               </div>
               <div className="flex flex-col p-2 overflow-y-auto">
-                {technicians.filter(t => t.status === 'Em Rota').length > 0 ? (
-                  technicians.filter(t => t.status === 'Em Rota').map(t => (
+                {/* 1. Show Failures (Occurrences) First */}
+                {collections.filter(c => c.status === 'Falha' && c.date === new Date().toISOString().split('T')[0]).map(c => {
+                  const tech = technicians.find(t => t.id === c.driverId);
+                  return (
                     <AlertItem
-                      key={t.id}
-                      icon="local_shipping"
-                      color="text-blue-500"
-                      title={`${t.name}`}
-                      desc={t.remaining_km !== undefined && t.remaining_km !== null ? `Faltam ${t.remaining_km.toFixed(1)} km para finalizar.` : 'Calculando rota...'}
+                      key={c.id}
+                      icon="warning"
+                      color="text-red-500"
+                      title={`Falha: ${c.client}`}
+                      desc={`${tech?.name?.split(' ')[0] || 'Técnico'} reportou falha: ${c.notes || 'Sem justificativa detalhada'}`}
+                      onClick={() => navigate('/coletas')}
                     />
-                  ))
-                ) : (
-                  <AlertItem icon="check_circle" color="text-emerald-500" title="Sem rotas ativas" desc="Nenhum técnico está em rota no momento." />
+                  );
+                })}
+
+                {/* 2. Show Active Techs */}
+                {technicians.filter(t => t.status === 'Em Rota').map(t => (
+                  <AlertItem
+                    key={t.id}
+                    icon="local_shipping"
+                    color="text-blue-500"
+                    title={`${t.name}`}
+                    desc={t.remaining_km !== undefined && t.remaining_km !== null ? `Em rota: Faltam ${t.remaining_km.toFixed(1)} km.` : 'Calculando rota...'}
+                    onClick={() => navigate('/mapa')}
+                  />
+                ))}
+
+                {collections.filter(c => c.status === 'Falha' && c.date === new Date().toISOString().split('T')[0]).length === 0 && technicians.filter(t => t.status === 'Em Rota').length === 0 && (
+                  <AlertItem icon="check_circle" color="text-emerald-500" title="Operação Normal" desc="Nenhuma ocorrência ou motorista em rota." />
                 )}
               </div>
             </div>
@@ -245,8 +262,8 @@ const KpiCard = ({ title, value, icon, color, bg, footer, footerColor, onClick }
   </div>
 );
 
-const AlertItem = ({ icon, color, title, desc }: any) => (
-  <div className="flex gap-3 p-3 hover:bg-[#f0f2f5] dark:hover:bg-[#233348] rounded-lg cursor-pointer transition-colors group">
+const AlertItem = ({ icon, color, title, desc, onClick }: any) => (
+  <div onClick={onClick} className="flex gap-3 p-3 hover:bg-[#f0f2f5] dark:hover:bg-[#233348] rounded-lg cursor-pointer transition-colors group">
     <div className={`flex-shrink-0 mt-1 ${color}`}>
       <span className="material-symbols-outlined">{icon}</span>
     </div>

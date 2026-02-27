@@ -15,10 +15,10 @@ export const ApiConfig = () => {
 
   useEffect(() => {
     setFormData({
-        apiClientId: settings.apiClientId || '',
-        apiClientSecret: settings.apiClientSecret || '',
-        apiBaseUrlProd: settings.apiBaseUrlProd || '',
-        apiBaseUrlStage: settings.apiBaseUrlStage || ''
+      apiClientId: settings.apiClientId || '',
+      apiClientSecret: settings.apiClientSecret || '',
+      apiBaseUrlProd: settings.apiBaseUrlProd || '',
+      apiBaseUrlStage: settings.apiBaseUrlStage || ''
     });
   }, [settings]);
 
@@ -36,26 +36,26 @@ export const ApiConfig = () => {
   const handleTestConnection = async () => {
     setIsTesting(true);
     setTestLogs([]);
-    
+
     // Simulate connection process steps
     const addLog = (msg: string) => setTestLogs(prev => [...prev, msg]);
 
     addLog(`Iniciando handshake com ${formData.apiBaseUrlProd || 'endpoint indefinido'}...`);
-    
+
     await new Promise(r => setTimeout(r, 800));
 
     if (!formData.apiClientId || !formData.apiClientSecret) {
-        addLog(`[ERROR] Credenciais ausentes. Verifique Client ID e Secret.`);
-        setIsTesting(false);
-        return;
+      addLog(`[ERROR] Credenciais ausentes. Verifique Client ID e Secret.`);
+      setIsTesting(false);
+      return;
     }
 
     addLog(`Credenciais validadas localmente.`);
     await new Promise(r => setTimeout(r, 800));
-    
+
     const now = new Date().toLocaleString('pt-BR');
     addLog(`${now} [SUCCESS] Status 200 OK - Conexão estabelecida.`);
-    
+
     setIsTesting(false);
   };
 
@@ -73,20 +73,20 @@ export const ApiConfig = () => {
           </div>
           <div className="flex items-center gap-3">
             <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border ${formData.apiClientId ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-red-500/10 border-red-500/20'}`}>
-                <span className="relative flex h-2.5 w-2.5">
+              <span className="relative flex h-2.5 w-2.5">
                 <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${formData.apiClientId ? 'bg-emerald-400' : 'bg-red-400'}`}></span>
                 <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${formData.apiClientId ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
-                </span>
-                <span className={`${formData.apiClientId ? 'text-emerald-400' : 'text-red-400'} text-xs font-bold uppercase tracking-wide`}>
-                    {formData.apiClientId ? 'Configurado' : 'Pendente'}
-                </span>
+              </span>
+              <span className={`${formData.apiClientId ? 'text-emerald-400' : 'text-red-400'} text-xs font-bold uppercase tracking-wide`}>
+                {formData.apiClientId ? 'Configurado' : 'Pendente'}
+              </span>
             </div>
-            <button 
-                onClick={handleSave}
-                className={`flex items-center justify-center gap-2 h-10 px-6 ${saved ? 'bg-green-600' : 'bg-primary hover:bg-blue-600'} text-white text-sm font-bold rounded-lg transition-all shadow-lg shadow-blue-900/20`}
+            <button
+              onClick={handleSave}
+              className={`flex items-center justify-center gap-2 h-10 px-6 ${saved ? 'bg-green-600' : 'bg-primary hover:bg-blue-600'} text-white text-sm font-bold rounded-lg transition-all shadow-lg shadow-blue-900/20`}
             >
-                <span className="material-symbols-outlined text-[20px]">{saved ? 'check' : 'save'}</span> 
-                {saved ? 'Salvo!' : 'Salvar'}
+              <span className="material-symbols-outlined text-[20px]">{saved ? 'check' : 'save'}</span>
+              {saved ? 'Salvo!' : 'Salvar'}
             </button>
           </div>
         </div>
@@ -101,15 +101,15 @@ export const ApiConfig = () => {
                 </div>
               </div>
               <div className="p-6 flex flex-col gap-5">
-                <SecretInput 
-                    label="Client ID" 
-                    value={formData.apiClientId} 
-                    onChange={(val: string) => handleChange('apiClientId', val)}
+                <SecretInput
+                  label="Client ID"
+                  value={formData.apiClientId}
+                  onChange={(val: string) => handleChange('apiClientId', val)}
                 />
-                <SecretInput 
-                    label="Client Secret" 
-                    value={formData.apiClientSecret} 
-                    onChange={(val: string) => handleChange('apiClientSecret', val)}
+                <SecretInput
+                  label="Client Secret"
+                  value={formData.apiClientSecret}
+                  onChange={(val: string) => handleChange('apiClientSecret', val)}
                 />
               </div>
             </div>
@@ -123,15 +123,17 @@ export const ApiConfig = () => {
               </div>
               <div className="p-6 flex flex-col gap-5">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <TextInput 
-                    label="Base URL (Produção)" 
-                    value={formData.apiBaseUrlProd} 
+                  <TextInput
+                    label="Base URL (Produção)"
+                    value={formData.apiBaseUrlProd}
                     onChange={(val: string) => handleChange('apiBaseUrlProd', val)}
+                    aria-label="Base URL da API para Produção"
                   />
-                  <TextInput 
-                    label="Base URL (Staging)" 
-                    value={formData.apiBaseUrlStage} 
+                  <TextInput
+                    label="Base URL (Staging)"
+                    value={formData.apiBaseUrlStage}
                     onChange={(val: string) => handleChange('apiBaseUrlStage', val)}
+                    aria-label="Base URL da API para Staging"
                   />
                 </div>
               </div>
@@ -147,7 +149,7 @@ export const ApiConfig = () => {
                 </div>
               </div>
               <div className="p-6 flex flex-col gap-4 flex-1">
-                <button 
+                <button
                   onClick={handleTestConnection}
                   disabled={isTesting}
                   className="w-full bg-primary hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold h-12 rounded-lg transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
@@ -156,22 +158,22 @@ export const ApiConfig = () => {
                     <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
                   ) : (
                     <>
-                        <span className="material-symbols-outlined">wifi_tethering</span>
-                        Verificar Conexão
+                      <span className="material-symbols-outlined">wifi_tethering</span>
+                      Verificar Conexão
                     </>
                   )}
                 </button>
                 <div className="mt-4 flex-1 flex flex-col min-h-[250px]">
                   <div className="bg-black/40 border border-border-dark rounded-lg p-4 font-mono text-xs overflow-y-auto h-full max-h-[400px]">
                     <div className="flex flex-col gap-2">
-                        {testLogs.length === 0 && !isTesting && (
-                            <span className="text-slate-500">Aguardando início do teste...</span>
-                        )}
-                        {testLogs.map((log, idx) => (
-                             <span key={idx} className={`${log.includes('[ERROR]') ? 'text-red-400' : log.includes('[SUCCESS]') ? 'text-emerald-500' : 'text-slate-300'}`}>
-                                {log}
-                             </span>
-                        ))}
+                      {testLogs.length === 0 && !isTesting && (
+                        <span className="text-slate-500">Aguardando início do teste...</span>
+                      )}
+                      {testLogs.map((log, idx) => (
+                        <span key={idx} className={`${log.includes('[ERROR]') ? 'text-red-400' : log.includes('[SUCCESS]') ? 'text-emerald-500' : 'text-slate-300'}`}>
+                          {log}
+                        </span>
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -184,15 +186,15 @@ export const ApiConfig = () => {
   );
 };
 
-const SecretInput = ({ label, value, onChange }: any) => (
+const SecretInput = ({ label, value, onChange, 'aria-label': ariaLabel }: any) => (
   <label className="flex flex-col w-full gap-2">
     <span className="text-white text-sm font-medium">{label}</span>
     <div className="flex w-full items-stretch rounded-lg group focus-within:ring-2 focus-within:ring-primary/50 transition-all">
-      <input
-        className="form-input flex-1 bg-[#192433] border-border-dark text-white rounded-l-lg border-r-0 h-12 px-4 focus:ring-0 focus:border-primary placeholder:text-[#92a9c9]"
+      <input className="form-input flex-1 bg-[#192433] border-border-dark text-white rounded-l-lg border-r-0 h-12 px-4 focus:ring-0 focus:border-primary placeholder:text-[#92a9c9]"
         type="password"
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        aria-label={ariaLabel || "Configuração API"}
         placeholder="••••••••••••••••••••"
       />
       <button className="flex items-center justify-center px-4 bg-[#192433] border border-l-0 border-border-dark rounded-r-lg text-[#92a9c9] hover:text-white transition-colors">
@@ -205,10 +207,10 @@ const SecretInput = ({ label, value, onChange }: any) => (
 const TextInput = ({ label, value, onChange }: any) => (
   <label className="flex flex-col w-full gap-2">
     <p className="text-white text-sm font-medium">{label}</p>
-    <input
-      className="form-input w-full rounded-lg bg-[#192433] border-border-dark text-white h-12 px-4 focus:ring-2 focus:ring-primary/50 focus:border-primary placeholder:text-[#92a9c9]"
+    <input className="form-input w-full rounded-lg bg-[#192433] border-border-dark text-white h-12 px-4 focus:ring-2 focus:ring-primary/50 focus:border-primary placeholder:text-[#92a9c9]"
       value={value}
       onChange={(e) => onChange(e.target.value)}
+      aria-label="Valor API"
     />
   </label>
 );

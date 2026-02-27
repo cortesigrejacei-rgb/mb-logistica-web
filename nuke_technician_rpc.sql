@@ -25,10 +25,13 @@ BEGIN
         -- Ignora se a tabela não existir
     END;
 
-    -- 5. Deletar o perfil do técnico
+    -- 5. Deletar o usuário da Autenticação do Supabase (Obrigatório para permitir re-cadastro)
+    DELETE FROM auth.users WHERE id = target_id::uuid;
+
+    -- 6. Deletar o perfil do técnico
     DELETE FROM technicians WHERE id = target_id;
 
-    RETURN jsonb_build_object('success', true, 'message', 'Técnico e dependências removidos com sucesso');
+    RETURN jsonb_build_object('success', true, 'message', 'Técnico, Login e dependências removidos com sucesso');
 
 EXCEPTION WHEN OTHERS THEN
     RETURN jsonb_build_object('success', false, 'message', SQLERRM);

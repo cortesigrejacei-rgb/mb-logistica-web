@@ -202,27 +202,26 @@ export const TechnicianForm = () => {
                         <div className="flex flex-col items-center gap-6 mb-4">
                             <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
                                 <div className="w-32 h-32 rounded-full bg-background-dark overflow-hidden border-4 border-border-dark group-hover:border-primary transition-all shadow-2xl">
-                                    <img
-                                        src={avatarUrlInput || avatar || `https://ui-avatars.com/api/?name=${name || 'MB'}`}
+                                    <img src={avatarUrlInput || avatar || `https://ui-avatars.com/api/?name=${name || 'MB'}`}
                                         className="w-full h-full object-cover"
                                         onError={(e) => { e.currentTarget.src = `https://ui-avatars.com/api/?name=MB&background=random`; }}
-                                        alt="Avatar"
+                                        alt="Avatar do Técnico"
                                     />
                                 </div>
                                 <div className="absolute bottom-0 right-0 bg-primary size-10 rounded-full flex items-center justify-center border-4 border-surface-dark text-white">
                                     <span className="material-symbols-outlined text-lg">photo_camera</span>
                                 </div>
-                                <input ref={fileInputRef} type="file" className="hidden" accept="image/*" onChange={handleAvatarSelect} />
+                                <input ref={fileInputRef} type="file" className="hidden" accept="image/*" onChange={handleAvatarSelect} aria-label="Upload de Avatar" />
                             </div>
 
                             <div className="w-full max-w-md space-y-2">
                                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Hotlink: URL da Foto (Opcional)</label>
-                                <input
-                                    type="url"
+                                <input type="url"
                                     placeholder="https://exemplo.com/foto.jpg"
                                     className="w-full bg-background-dark border border-border-dark text-white rounded-2xl p-4 text-xs font-medium focus:ring-2 focus:ring-primary/20 outline-none"
                                     value={avatarUrlInput}
-                                    onChange={e => {
+                                    onChange={(e) => {
+                                        const value = e.target.value;
                                         setAvatarUrlInput(e.target.value);
                                         if (e.target.value) setAvatarFile(null);
                                     }}
@@ -233,11 +232,11 @@ export const TechnicianForm = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Nome Completo</label>
-                                <input type="text" required className="w-full bg-background-dark border border-border-dark text-white rounded-2xl p-4 text-sm font-bold focus:ring-2 focus:ring-primary/20 outline-none" value={name} onChange={e => setName(e.target.value)} />
+                                <input type="text" required className="w-full bg-background-dark border border-border-dark text-white rounded-2xl p-4 text-sm font-bold focus:ring-2 focus:ring-primary/20 outline-none" value={name} onChange={e => setName(e.target.value)} aria-label="Nome do Técnico" />
                             </div>
                             <div className="space-y-2">
                                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">E-mail Corporativo</label>
-                                <input type="email" required className="w-full bg-background-dark border border-border-dark text-white rounded-2xl p-4 text-sm font-bold focus:ring-2 focus:ring-primary/20 outline-none" value={email} onChange={e => setEmail(e.target.value)} />
+                                <input type="email" required className="w-full bg-background-dark border border-border-dark text-white rounded-2xl p-4 text-sm font-bold focus:ring-2 focus:ring-primary/20 outline-none" value={email} onChange={e => setEmail(e.target.value)} aria-label="E-mail" />
                             </div>
                         </div>
 
@@ -246,12 +245,12 @@ export const TechnicianForm = () => {
                             <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Endereço Residencial (Partida)</label>
                             <div className="bg-background-dark border border-border-dark rounded-2xl flex items-center px-4 focus-within:ring-2 focus-within:ring-primary/20 transition-all">
                                 <span className="material-symbols-outlined text-slate-500">home</span>
-                                <input
-                                    type="text"
+                                <input type="text"
                                     placeholder="Rua, Número, Cidade - Estado"
                                     className="bg-transparent text-white text-sm font-bold border-none focus:ring-0 w-full h-12"
                                     value={address}
                                     onChange={e => setAddress(e.target.value)}
+                                    aria-label="Endereço Completo"
                                     onBlur={() => handleGeocodeAddress('start')}
                                 />
                             </div>
@@ -283,12 +282,12 @@ export const TechnicianForm = () => {
                             </div>
                             <div className="bg-background-dark border border-border-dark rounded-2xl flex items-center px-4 focus-within:ring-2 focus-within:ring-primary/20 transition-all">
                                 <span className="material-symbols-outlined text-slate-500">hotel</span>
-                                <input
-                                    type="text"
+                                <input type="text"
                                     placeholder="Deixe em branco se for o mesmo da partida"
                                     className="bg-transparent text-white text-sm font-bold border-none focus:ring-0 w-full h-12"
                                     value={endAddress}
                                     onChange={e => setEndAddress(e.target.value)}
+                                    aria-label="Local de Finalização"
                                     onBlur={() => handleGeocodeAddress('end')}
                                 />
                             </div>
@@ -306,13 +305,13 @@ export const TechnicianForm = () => {
                                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Consumo Médio (km/l)</label>
                                 <div className="bg-background-dark border border-border-dark rounded-2xl flex items-center px-4 focus-within:ring-2 focus-within:ring-primary/20 transition-all">
                                     <span className="material-symbols-outlined text-slate-500">local_gas_station</span>
-                                    <input
-                                        type="number"
+                                    <input type="number"
                                         step="0.1"
                                         placeholder="10.0"
                                         className="bg-transparent text-white text-sm font-bold border-none focus:ring-0 w-full h-12"
                                         value={consumption}
                                         onChange={e => setConsumption(Number(e.target.value))}
+                                        aria-label="Consumo Médio"
                                     />
                                 </div>
                             </div>
